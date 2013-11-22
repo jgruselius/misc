@@ -1,5 +1,5 @@
 # Author: Joel Gruselius
-# Version: 2012-12-21
+# Version: 2013-11-21
 # Description: Various simple but useful methods for nucleotide sequences
 # to be used in a terminal.
 
@@ -45,8 +45,11 @@ def main(args):
 		"s":search, "search":search,
 		"i":stats, "info":stats
 	}
-	if args.mode in options:
-		print(options[args.mode](args.seq))
+	if args.command in options:
+		if args.command == "s":
+			print(options[args.command](args.seq, args.query))
+		else:
+			print(options[args.command](args.seq))
 	else:
 		print(help())
 	print("Timer: {0} s".format(time.clock()-t))
@@ -54,11 +57,15 @@ def main(args):
 if __name__ == "__main__":
 	p = argparse.ArgumentParser(description="Various simple but useful " +
 		"methods for nucleotide sequences.")
-	p.add_argument("mode", metavar="<mode>", help="The transformation to apply",
-		choices=("l","r","c","rc","s","i"))
-	p.add_argument("seq", metavar="<seq>", help="Nucleotide sequence")
-	s = p.add_subparsers(help="subparser help").add_parser("s", help="query help")
-	s.add_argument("query", metavar="[query]", help="Query sequence for mode 's'")
+	s = p.add_subparsers(help="Commands",dest="command")
+	helpString = "Nucleotide sequence"
+	s.add_parser("r", help="Return the reverse sequence").add_argument("seq", help=helpString)
+	s.add_parser("c", help="Return the complement sequence").add_argument("seq", help=helpString)
+	s.add_parser("rc", help="Return the reverse-complement sequence").add_argument("seq", help=helpString)
+	sp = s.add_parser("s", help="Search the sequence")
+	sp.add_argument("seq", help=helpString)
+	sp.add_argument("query", help="The " + helpString + " to search for")
+	s.add_parser("i", help="Show info about sequence").add_argument("seq", help=helpString)
 	args = p.parse_args()
 	main(args)
 
