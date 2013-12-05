@@ -15,7 +15,7 @@ do
 	do
 		project=$(basename $PWD)
 		sample=$(basename $folder)
-		metrics=$(cat $file | head -q -n 8 | tail -n 1 | tr "\t" ",")
+		metrics=$(cat $file | head -q -n 8 | tail -n 1 | tr "," "." | tr "\t" ",")
 		echo -e $sample","$project","$metrics
 	done
 done
