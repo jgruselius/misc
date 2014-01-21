@@ -1,4 +1,4 @@
-To use this function as a CouchDB view, create a map.json file containing:
+To use this function as a CouchDB view, create a <code>map.json</code> file containing:
 ```json
         {"map":"function(doc) { ... }"}
 ```
@@ -8,4 +8,4 @@ The StatusDB view can then be queried by running:
         curl -s -H "Content-Type: application/json" --data "@map.json" \
         http://USER:PASS@tools-dev.scilifelab.se:5984/flowcells/_temp_view
 ```
-Where USER and PASS should be replaced with the actual login details.
+Where <code>USER</code> and <code>PASS</code> should be replaced with the actual login details.
