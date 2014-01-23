@@ -1,7 +1,6 @@
 import sys
 import json
 import csv
-import time
 
 def parse(in_file, out_file):
 	# Data object is of format:
@@ -36,7 +35,4 @@ def parse(in_file, out_file):
 	# 			writer.writerow([fc["key"], i+1, bc, reads])
 
 if __name__ == "__main__":
-	t1 = time.clock()
 	parse(sys.stdin, sys.stdout)
-	print(time.clock() - t1)
-	
