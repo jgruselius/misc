@@ -15,7 +15,7 @@ function(doc) {
 		var yields = [];
 		for(var bc in bcodes) {
 			var lane = parseInt(bcodes[bc]['Lane'],10) - 1;
-			var yield = bcodes[bc]['Yield (Mbases)'].replace(',','.');
+			var yield = bcodes[bc]['# Reads'].replace(',','');
 			if(!(lane in yields)) {
 				yields[lane] = {};
 			}
