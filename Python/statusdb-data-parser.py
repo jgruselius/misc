@@ -22,9 +22,9 @@ def parse(in_file, out_file):
 	writer.writerow(["RUN_ID","LANE","BARCODE","READS"])
 
 	# As an inappropriately long comprenhension:
-	writer.writerows([[fc["key"], i+1, bc, reads] \
+	writer.writerows([[fc["key"], i, bc, reads] \
 		for fc in data["rows"] \
-		for i, lane in enumerate(fc["value"]) \
+		for i, lane in fc["value"].items() \
 		for bc, reads in lane.items()]
 	)
 
@@ -36,8 +36,8 @@ def parse_big(in_file, out_file):
 	for line in in_file:
 		if re.match("\{\"id", line):
 			fc = json.loads(line.rstrip("\r\n,"))
-			writer.writerows([[fc["key"], i+1, bc, reads] \
-				for i, lane in enumerate(fc["value"]) \
+			writer.writerows([[fc["key"], i, bc, reads] \
+				for i, lane in fc["value"].items() \
 				for bc, reads in lane.items()]
 			)
 

@@ -12,9 +12,9 @@ function(doc) {
 	var d = new Date(doc['modification_time']);
 	var bcodes = doc['illumina']['Demultiplex_Stats']['Barcode_lane_statistics'];
 	if(d.getFullYear()==2013 && bcodes.length) {
-		var yields = [];
+		var yields = {};
 		for(var bc in bcodes) {
-			var lane = parseInt(bcodes[bc]['Lane'],10) - 1;
+			var lane = parseInt(bcodes[bc]['Lane'],10);
 			var yield = bcodes[bc]['# Reads'].replace(',','');
 			if(!(lane in yields)) {
 				yields[lane] = {};
