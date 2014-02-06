@@ -1,13 +1,18 @@
-plotPlate <- function(fileName) {
+plotPlate <- function(fileName, val, plateCoord="Well", splitBy=NULL) {
 	require(ggplot2)
 	if(!file.exists(fileName)) {
 		stop(paste("file:",fileName,"does not exist"))
 	}
-	data <- read.csv(file=fileName,head=TRUE,stringsAsFactors=FALSE)
-	ggplot(data,aes(x=as.numeric(substring(Well.positions,2)),y=substring(Well.positions,1,1))) +
-		geom_tile(aes(fill=MeasAvg)) +
+	dat <- read.csv(file=fileName,head=TRUE,stringsAsFactors=FALSE)
+    plateRow <- substring(dat[[plateCoord]],1,1)
+    plateCol <- as.numeric(substring(dat[[plateCoord]],2))
+	platePlot <- ggplot(data=dat,aes(x=plateCol,y=plateRow)) +
+		geom_tile(aes_string(fill=val)) +
 		scale_x_continuous("Column",breaks=1:12) +
 		scale_y_discrete("Row",limits=rev(LETTERS[1:8])) +
-		scale_fill_gradient(low="white",high="steelblue") +
-		facet_grid(~Volume)
+		scale_fill_gradient(low="white",high="steelblue")
+    if(!is.null(splitBy)) {
+        platePlot <- platePlot + facet_grid(paste("~",splitBy,sep=""))
+    }
+    platePlot
 }
