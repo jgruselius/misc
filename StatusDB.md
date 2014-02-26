@@ -15,9 +15,9 @@ curl -s -H "Content-Type: application/json" --data "@map.json" \
 ```
 Where <code>USER</code> and <code>PASS</code> should be replaced with the actual login details to the database server.
 
-#### 2. Using the BASH script: ####
+#### 2. Using the shell script: ####
 
-To use the map function defining a CouchDB view defined in the file <code>mapfunc.js</code>, use the BASH script [<code>statusdb-get.sh</code>](https://github.com/jgruselius/misc/blob/master/BASH/statusdb-get.sh):
+To use the map function defining a CouchDB view defined in the file <code>mapfunc.js</code>, use the shell script [<code>statusdb-get.sh</code>](https://github.com/jgruselius/misc/blob/master/BASH/statusdb-get.sh):
 
 ```bash
 sh statusdb-get.sh <mapfunc.js>
