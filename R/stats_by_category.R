@@ -3,8 +3,8 @@
 stats_by_category <- function(df, categ, group1, group2) {
 	require(plyr)
 		sfun <- function(x, col) {
-			c(max = max(x[[col]]),
-			min = min(x[[col]]),
+			c(min = min(x[[col]]),
+			max = max(x[[col]]),
 			mean = mean(x[[col]]),
 			stdev = sd(x[[col]]),
 			cv = sd(x[[col]]) / mean(x[[col]]))

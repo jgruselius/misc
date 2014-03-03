@@ -12,4 +12,6 @@ json="{\"map\":\"$func\"}"
 echo "Using server URL: http://$url" >&2
 read -p "Username for server: " user
 read -s -p "Password for $user: " pass
-curl -s -H "Content-Type: application/json" --data "$json" http://$user:$pass@$url && unset user && unset pass
+curl -s -H "Content-Type: application/json" --data "$json" http://$user:$pass@$url
+unset user
+unset pass

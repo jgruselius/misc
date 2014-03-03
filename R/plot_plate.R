@@ -4,8 +4,8 @@ plotPlate <- function(fileName, val, plateCoord="Well", splitBy=NULL) {
 		stop(paste("file:",fileName,"does not exist"))
 	}
 	dat <- read.csv(file=fileName,head=TRUE,stringsAsFactors=FALSE)
-	plateRow <- substring(dat[[plateCoord]],1,1)
-	plateCol <- as.numeric(substring(dat[[plateCoord]],2))
+	dat$plateRow <- substring(dat[[plateCoord]],1,1)
+	dat$plateCol <- as.numeric(substring(dat[[plateCoord]],2))
 	platePlot <- ggplot(data=dat,aes(x=plateCol,y=plateRow)) +
 		geom_tile(aes_string(fill=val)) +
 		scale_x_continuous("Column",breaks=1:12) +
