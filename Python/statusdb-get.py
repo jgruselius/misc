@@ -7,8 +7,8 @@ import getpass
 import argparse
 
 def get_data(url, js_path):
-	user = input("User name for {0}:".format(url))
-	passw = getpass.getpass("Password:")
+	user = input("User name for {0}: ".format(url))
+	passw = getpass.getpass("Password: ")
 
 	with open(js_path) as js_file:
 		js = js_file.read()
@@ -30,6 +30,21 @@ def get_data(url, js_path):
 def write_json(resp, out_file):
 	for line in resp.iter_lines(decode_unicode=True):
 		out_file.write(line)
+
+def write_csv_gen(resp, out_file):
+	writer = csv.writer(out_file, delimiter=",")
+	writer.writerow(header)
+
+	for line in resp.iter_lines(decode_unicode=True):
+		if re.match("\{\"id", line)):
+			json.loads
+
+	it = (json.loads(line.rstrip("\r\n,")) \
+		for line in resp.iter_lines(decode_unicode=True) \
+		if re.match("\{\"id", line))
+
+	writer.writerows(it)
+
 
 def write_csv(resp, out_file):
 	# Data object is of format:
@@ -65,7 +80,7 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	
 	if args.csv:
-		write_func = write_csv
+		write_func = write_csv_gen
 	else:
 		write_func = write_json
 
