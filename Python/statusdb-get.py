@@ -33,18 +33,36 @@ def write_json(resp, out_file):
 
 def write_csv_gen(resp, out_file):
 	writer = csv.writer(out_file, delimiter=",")
-	writer.writerow(header)
+	# writer.writerow(header)
+	#import pdb; pdb.set_trace()
+	# Parse using for loop:
+	# header = None
+	# for line in resp.iter_lines(decode_unicode=True):
+	# 	if re.match("\{\"id", line):
+	# 		obj = json.loads(line.rstrip("\r\n,"))
+	# 		if not header:
+	# 			header = ["key"]
+	# 			header.extend([key for key in obj["value"].keys()])
+	# 			writer.writerow(header)
+	# 		row = [obj["key"]]
+	# 		row.extend([val for val in obj["value"].values()])
+	# 		writer.writerow(row)
 
-	for line in resp.iter_lines(decode_unicode=True):
-		if re.match("\{\"id", line)):
-			json.loads
+	# Parse using generator function:
+	def _csv_gen():
+		for line in resp.iter_lines(decode_unicode=True):
+			if re.match("\{\"id", line):
+				obj = json.loads(line.rstrip("\r\n,"))
+				row = [obj["key"]]
+				row.extend([val for val in obj["value"].values()])
+				yield row
 
-	it = (json.loads(line.rstrip("\r\n,")) \
-		for line in resp.iter_lines(decode_unicode=True) \
-		if re.match("\{\"id", line))
+	# Parse using generator expression:
+	# it = (json.loads(line.rstrip("\r\n,")) \
+	# 	for line in resp.iter_lines(decode_unicode=True) \
+	# 	if re.match("\{\"id", line))
 
-	writer.writerows(it)
-
+	writer.writerows(_csv_gen())
 
 def write_csv(resp, out_file):
 	# Data object is of format:
