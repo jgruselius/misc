@@ -6,11 +6,13 @@ stats_by_category <- function(df, categ, group1, group2) {
 			c(min = min(x[[col]]),
 			max = max(x[[col]]),
 			mean = mean(x[[col]]),
+			median = median(x[[col]]),
+			sum = sum(x[[col]]),
 			stdev = sd(x[[col]]),
 			cv = sd(x[[col]]) / mean(x[[col]]))
 		}
 	summary <- ddply(df, c(group1, group2), .fun=sfun, categ)
-	header <- c("min", "max", "mean", "stdev", "cv")
+	header <- c("min", "max", "mean", "median", "sum", "stdev", "cv")
 	header <- c(group1, group2, sapply(header, paste, categ, sep="."))
 	colnames(summary) <- header
 	return(summary)
