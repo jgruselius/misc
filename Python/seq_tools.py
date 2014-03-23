@@ -6,6 +6,8 @@
 import argparse
 import time
 
+COMPL_MAP = {'A':'T','T':'A','C':'G','G':'C'}
+
 def length(seq):
 	return len(seq)
 
@@ -13,13 +15,11 @@ def reverse(seq):
 	return seq[::-1]
 
 def complement(seq):
-	complementMap = {'A':'T','T':'A','C':'G','G':'C'}
-	compl = [complementMap[nt] for nt in seq]
+	compl = [COMPL_MAP[nt] for nt in seq]
 	return "".join(compl)
 
 def reverseComplement(seq):
-	complementMap = {'A':'T','T':'A','C':'G','G':'C'}
-	revCompl = [complementMap[nt] for nt in seq[::-1]]
+	revCompl = [COMPL_MAP[nt] for nt in seq[::-1]]
 	return "".join(revCompl)
 
 def search(seq, query):
@@ -28,10 +28,12 @@ def search(seq, query):
 	return match.join(seqList)
 
 def stats(seq):
+	seq = seq.replace(" ","")
 	n = len(seq)
-	counts = seq.count("A"), seq.count("T"), seq.count("C"), seq.count("G")
-	return "Length: {0}, A: {1}%, T: {2}%, C: {3}%, G: {4}%".format(n,
-		*[100*c/n for c in counts])
+	bases = COMPL_MAP.keys()
+	counts = (seq.count(base) for base in bases)
+	text = "Length: {0}, {1}: {5}%, {2}: {6}%, {3}: {7}%, {4}: {8}%"
+	return text.format(n, *(bases + [100*c/n for c in counts]))
 
 def help():
 	return "Usage:\n\tpython <command> <sequence>\n"
