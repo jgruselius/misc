@@ -54,7 +54,7 @@ def write_csv_gen(resp, out_file):
 			if re.match("\{\"id", line):
 				obj = json.loads(line.rstrip("\r\n,"))
 				row = [obj["key"]]
-				row.extend([val for val in obj["value"].values()])
+				row.extend([item for val in obj["value"].values() for item in val])
 				yield row
 
 	# Parse using generator expression:
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	
 	if args.csv:
-		write_func = write_csv_gen
+		write_func = write_csv
 	else:
 		write_func = write_json
 

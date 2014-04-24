@@ -1,6 +1,8 @@
 /*
  Joel Gruselius, 2012
 
+ (Google Apps script)
+
  Searches for and returns a value from the preset spreadsheet. Parameters:
  	sampleId (string): Find the row with this string in column 1
  	runId (string): The name of the sheet

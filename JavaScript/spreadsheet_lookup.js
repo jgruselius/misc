@@ -1,3 +1,12 @@
+/*
+ Joel Gruselius, 2012
+
+ (Google Apps script)
+
+ ~~Description~~
+
+*/
+
 function trimString(str) {
   return str.replace(/^\s\s*/, "").replace(/\s\s*$/, "");
 }

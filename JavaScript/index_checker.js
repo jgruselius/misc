@@ -1,3 +1,12 @@
+/*
+ Joel Gruselius, 2012
+
+ (Google Apps script)
+
+ ~~Description~~
+
+*/
+
 function performanceTest() {
 	var testSet = constructTestSet(1000, 6);
 	var times = new Array(3);
@@ -13,29 +22,29 @@ function performanceTest() {
  Converts a two-dimensional array A[m][n] to a one-dimensional A[m]
 */
 function flattenArray(arr) {
-  var newArr = new Array(arr.length);
-  for(var i = 0, n = arr.length; i < n; i++) {
-    newArr[i] = arr[i][0];
-  }
-  return newArr;
+	var newArr = new Array(arr.length);
+	for(var i = 0, n = arr.length; i < n; i++) {
+		newArr[i] = arr[i][0];
+	}
+	return newArr;
 }
 
 /*
  Find all indexes that are compatible with the given one(s)  
 */
 function findCompatibles(indexSequences) {
-  var str = "";
-  if(typeof indexSequences == "string") {
-    indexSequences = [indexSequences];
-  } else {
-    indexSequences = flattenArray(indexSequences);
-  }
-  for(var index in indexReference) {
-    if(evaluateIndexes(indexSequences.concat(indexReference[index]))) {
-       str += index + " ";
-    }
-  }
-  return str;
+	var str = "";
+	if(typeof indexSequences == "string") {
+		indexSequences = [indexSequences];
+	} else {
+		indexSequences = flattenArray(indexSequences);
+	}
+	for(var index in indexReference) {
+	if(evaluateIndexes(indexSequences.concat(indexReference[index]))) {
+		str += index + " ";
+	}
+	}
+	return str;
 }
 
 /*
