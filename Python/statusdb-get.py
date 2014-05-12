@@ -5,6 +5,7 @@ import re
 import requests
 import getpass
 import argparse
+import collections
 
 def get_data(url, js_path):
 	user = input("User name for {0}: ".format(url))
@@ -31,10 +32,20 @@ def write_json(resp, out_file):
 	for line in resp.iter_lines(decode_unicode=True):
 		out_file.write(line)
 
+def flatten(l):
+	for item in l:
+		if isinstance(item, (tuple, list)):
+			for sub in flatten(item):
+				yield sub
+		elif isinstance(item, dict):
+			for sub in flatten(item.values()):
+				yield sub
+		else:
+			yield item
+
 def write_csv_gen(resp, out_file):
 	writer = csv.writer(out_file, delimiter=",")
 	# writer.writerow(header)
-	#import pdb; pdb.set_trace()
 	# Parse using for loop:
 	# header = None
 	# for line in resp.iter_lines(decode_unicode=True):
@@ -54,7 +65,8 @@ def write_csv_gen(resp, out_file):
 			if re.match("\{\"id", line):
 				obj = json.loads(line.rstrip("\r\n,"))
 				row = [obj["key"]]
-				row.extend([item for val in obj["value"].values() for item in val])
+				vals = obj["value"]
+				row.extend(flatten(vals))
 				yield row
 
 	# Parse using generator expression:
@@ -98,7 +110,7 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	
 	if args.csv:
-		write_func = write_csv
+		write_func = write_csv_gen
 	else:
 		write_func = write_json
 
