@@ -35,6 +35,9 @@ def stats(seq):
 	text = "Length: {0}, {1}: {5}%, {2}: {6}%, {3}: {7}%, {4}: {8}%"
 	return text.format(n, *(bases + [100*c/n for c in counts]))
 
+def lookup(seq):
+	pass
+
 def help():
 	return "Usage:\n\tpython <command> <sequence>\n"
 

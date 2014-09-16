@@ -11,11 +11,11 @@
  caching of return values of custom functions.
 */
 
-/* Add menu entry for refresh function */
+/* Add a menu with custom functions */
 function onOpen() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet();
-  var entries = [{name: "Refresh now", functionName: "refreshLastUpdate"}];
-  sheet.addMenu("Refresh", entries);
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu("Licenses").addItem("Refresh now", "refreshLastUpdate").addItem("Search","searchPrompt").addToUi();
+  copyAndTranspose();
 }
 
 /* Indicate that the spreadsheet has been changed since last refresh */
@@ -27,11 +27,37 @@ function onEdit() {
   }
 }
 
-/* Update the refresh date text */
+/* Prompt for a name to search for and display the results in a dialog box */
+function searchPrompt() {
+  var ui = SpreadsheetApp.getUi();
+  var prompt = ui.prompt("Search for user",
+                         "Enter the user name to search for:",
+                        ui.ButtonSet.OK_CANCEL);
+  var query = prompt.getResponseText();
+  if(prompt.getSelectedButton() === ui.Button.OK) {
+    var result = getLicenses(query, null) || "No valid entries found";
+    ui.alert("Search result for "+query, result, ui.ButtonSet.OK);
+  }
+}
+
+/* Update the refresh date text and transposed list */
 function refreshLastUpdate() {
-  var range = SpreadsheetApp.getActiveSpreadsheet().getRangeByName("refreshDate");
+  var range = SpreadsheetApp.getActiveSpreadsheet().getRangeByName("Search user!refreshDate");
   range.setValue(new Date());
   range.setBackground("white");
+  copyAndTranspose();
+}
+
+/* Transpose the data in the summary list and copy to another sheet */
+function copyAndTranspose() {
+  var s = SpreadsheetApp.getActiveSpreadsheet();
+  var a = s.getSheetByName("All Licenses").getDataRange().getValues();
+  var t = a[0].map(function(col, i) { 
+    return a.map(function(row) { 
+      return row[i];
+    });
+  });
+  s.getSheetByName("All Licenses (T)").getRange(1,1,t.length,t[0].length).setValues(t);
 }
 
 /*
@@ -40,9 +66,11 @@ function refreshLastUpdate() {
  issue date. Search only sheets with string "Username" in cell A1:
 */
 function getLicenses(userName, dummyVar) {
-  // Column in sheet with user ID and issue/revoke dates:
+  // Column in sheet with user ID, QA manager signature
+  // and issue/revoke dates:
   var USER_COL   = 1;
-  var ISSUE_COL  = 2;
+  var SIGN_COL   = 4;
+  var ISSUE_COL  = 5;
   var REVOKE_COL = 6;
   
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
@@ -54,10 +82,11 @@ function getLicenses(userName, dummyVar) {
     if(data[0][0] === "Username") {
       data = sheet.getRange(2, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues();
       for(var j in data) {
-        var userId     = data[j][USER_COL-1];
-        var issueDate  = new Date(data[j][ISSUE_COL-1]);
+        var userId = data[j][USER_COL-1];
+        var sign = data[j][SIGN_COL-1];
+        var issueDate = new Date(data[j][ISSUE_COL-1]);
         var revokeDate = new Date(data[j][REVOKE_COL-1]);
-        var valid      = (userId === userName && isFinite(issueDate) && !isFinite(revokeDate));
+        var valid = (userId === userName) && sign && isFinite(issueDate) && (!isFinite(revokeDate) || issueDate > revokeDate);
         if(valid) {
           licenseList.push(sheet.getName());
           break;

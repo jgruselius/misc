@@ -36,15 +36,15 @@ def write_json(resp, out_file):
 
 
 def flatten(l):
-    for item in l.values() if isinstance(l, dict) else l:
-        if isinstance(item, (tuple, list)):
-            for sub in flatten(item):
+    for val in l.values() if isinstance(l, dict) else l:
+        if isinstance(val, (tuple, list)):
+            for sub in flatten(val):
                 yield sub
-        elif isinstance(item, dict):
-            for sub in flatten(item.values()):
+        elif isinstance(val, dict):
+            for sub in flatten(val.values()):
                 yield sub
         else:
-            yield item
+            yield val
 
 
 def write_csv_gen(resp, out_file):
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Query a CouchDB database")
     parser.add_argument("jsfile", help="File containing JavaScript map function")
     parser.add_argument("--out", help="File to write response to")
-    parser.add_argument("--url", help="Database URL", default="http://tools-dev.scilifelab.se:5984/flowcells/_temp_view")
+    parser.add_argument("--url", help="Database URL", default="http://tools-dev.scilifelab.se:5984/analysis/_temp_view")
     parser.add_argument("--csv", help="Convert response to CSV", action="store_true")
     args = parser.parse_args()
 
