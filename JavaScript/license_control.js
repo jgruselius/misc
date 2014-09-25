@@ -11,16 +11,22 @@
  caching of return values of custom functions.
 */
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++80
+
 /* Add a menu with custom functions */
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu("Licenses").addItem("Refresh now", "refreshLastUpdate").addItem("Search","searchPrompt").addToUi();
+  ui.createMenu("Licenses")
+    .addItem("Refresh now", "refreshLastUpdate")
+    .addItem("Search","searchPrompt")
+      .addToUi();
   copyAndTranspose();
 }
 
 /* Indicate that the spreadsheet has been changed since last refresh */
 function onEdit() {
-  var range = SpreadsheetApp.getActiveSpreadsheet().getRangeByName("refreshDate");
+  var range = SpreadsheetApp.getActiveSpreadsheet()
+    .getRangeByName("refreshDate");
   var refreshDate = new Date(range.getValue());
   if(refreshDate < new Date()) {
     range.setBackgroundRGB(255, 214, 0);
@@ -42,7 +48,8 @@ function searchPrompt() {
 
 /* Update the refresh date text and transposed list */
 function refreshLastUpdate() {
-  var range = SpreadsheetApp.getActiveSpreadsheet().getRangeByName("Search user!refreshDate");
+  var range = SpreadsheetApp.getActiveSpreadsheet()
+    .getRangeByName("Search user!refreshDate");
   range.setValue(new Date());
   range.setBackground("white");
   copyAndTranspose();
@@ -57,7 +64,8 @@ function copyAndTranspose() {
       return row[i];
     });
   });
-  s.getSheetByName("All Licenses (T)").getRange(1,1,t.length,t[0].length).setValues(t);
+  s.getSheetByName("All Licenses (T)").clearContents()
+    .getRange(1,1,t.length,t[0].length).setValues(t);
 }
 
 /*
@@ -80,13 +88,15 @@ function getLicenses(userName, dummyVar) {
     var sheet = sheets[i];
     var data  = sheet.getRange(1, 1).getValues();
     if(data[0][0] === "Username") {
-      data = sheet.getRange(2, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues();
+      data = sheet.getRange(2, 1, sheet.getLastRow(), sheet.getLastColumn())
+        .getValues();
       for(var j in data) {
         var userId = data[j][USER_COL-1];
         var sign = data[j][SIGN_COL-1];
         var issueDate = new Date(data[j][ISSUE_COL-1]);
         var revokeDate = new Date(data[j][REVOKE_COL-1]);
-        var valid = (userId === userName) && sign && isFinite(issueDate) && (!isFinite(revokeDate) || issueDate > revokeDate);
+        var valid = (userId === userName) && sign && isFinite(issueDate)
+          && (!isFinite(revokeDate) || issueDate > revokeDate);
         if(valid) {
           licenseList.push(sheet.getName());
           break;
