@@ -1,5 +1,5 @@
 /*
- Joel Gruselius 2014.05
+ Joel Gruselius 2014.10
  
  (Google Apps script)
 
@@ -12,18 +12,26 @@
 
 var FOLDER_ID = "0B_062T6cLrjbM2IwZWI5MDctMTZkYi00N2JiLThmZTEtZDJiN2IxNDI4ZDFm";
 
+function logProps() {
+  Logger.log(PropertiesService.getUserProperties().getProperties());
+}
+
 function run() {
   try {
     var updates = filterNew(getFiles());
     if(updates.length > 0) {
-      ScriptDb.getMyDb().saveBatch(updates, false);
+      var props = PropertiesService.getUserProperties();
+      for(var i in updates) {
+        props.setProperty(updates[i].id, updates[i].changed.toISOString());
+      }
       var names = updates.map(function(x) {
-        return "<a href=\"" + x.url + "\">" + x.name + "</a> (" + x.created + ")";
+        return "<a href=\"" + x.url + "\">" + x.name + "</a> (" + x.changed.toLocaleString() + ")";
       });
       var body = "The following monitored files have been added to \"" +
                  DocsList.getFolderById(FOLDER_ID).getName() +
-                 "\":\n\n" +
-                 names.join("\n");
+                 "\":<br><ul><li>" +
+                 names.join("</li><li>") +
+                 "</li></ul>";
       MailApp.sendEmail({
         to: Session.getActiveUser().getEmail(),
         name: "Google Drive folder monitor",
@@ -39,7 +47,9 @@ function run() {
 }
 
 function notInDb(file) {
-  return ScriptDb.getMyDb().query(file).getSize() < 1;
+  var props = PropertiesService.getUserProperties().getProperties();
+  // Compare ID and time of last change:
+  return !(file.id in props && props[file.id] == file.changed);
 }
 
 function getMonitored() {
@@ -61,9 +71,10 @@ function getFiles() {
     var match = x.getName().match(/[A-Z]\.[A-Za-z]+_\d\d_\d\d/);
     return !!match && monList.indexOf(match[0]) > -1;
   });
-  var files = folder.monitored.map(function(x) { 
-    return {"name":x.getName(), "id":x.getId(), "created":x.getDateCreated().toLocaleString(),
-            "url":x.getUrl(), "folder":FOLDER_ID, "type":"file"};
+  var files = folder.monitored.map(function(x) {
+    return {"name":x.getName(), "id":x.getId(), "created":x.getDateCreated(),
+            "changed":x.getLastUpdated(), "url":x.getUrl(),
+            "folder":FOLDER_ID, "type":"file"};
   });
   Logger.log(files);
   return files;
@@ -74,16 +85,7 @@ function filterNew(files) {
 }
 
 function deleteAll() {
-  var db = ScriptDb.getMyDb();
-  while (true) {
-    var result = db.query({});
-    if (result.getSize() == 0) {
-      break;
-    }
-    while (result.hasNext()) {
-      db.remove(result.next());
-    }
-  }
+  PropertiesService.getUserProperties().deleteAllProperties();
 }
 
 function initialize() {
