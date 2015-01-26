@@ -19,18 +19,24 @@ function onOpen() {
   ui.createMenu("Licenses")
     .addItem("Refresh now", "refreshLastUpdate")
     .addItem("Search","searchPrompt")
+    .addItem("Add method", "addMethodDialog")
       .addToUi();
   copyAndTranspose();
 }
 
 /* Indicate that the spreadsheet has been changed since last refresh */
-function onEdit() {
-  var range = SpreadsheetApp.getActiveSpreadsheet()
-    .getRangeByName("refreshDate");
+function onEdit(e) {
+  var range = e.source.getRangeByName("Search user!refreshDate");
   var refreshDate = new Date(range.getValue());
   if(refreshDate < new Date()) {
     range.setBackgroundRGB(255, 214, 0);
   }
+  /*
+  var html = "<code>" + e.changeType + " at " + e.range.getSheet().getName() + "!" +
+    e.range.getA1Notation() + " by " + e.user.getEmail() + " (" +
+    refreshDate.toLocaleString() + ")</code>";
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput(html));
+  */
 }
 
 /* Prompt for a name to search for and display the results in a dialog box */
@@ -86,10 +92,9 @@ function getLicenses(userName, dummyVar) {
   
   for(var i in sheets) {
     var sheet = sheets[i];
-    var data  = sheet.getRange(1, 1).getValues();
+    var data  = sheet.getSheetValues(1, 1, 1, 1);
     if(data[0][0] === "Username") {
-      data = sheet.getRange(2, 1, sheet.getLastRow(), sheet.getLastColumn())
-        .getValues();
+      data = sheet.getSheetValues(2, 1, sheet.getLastRow(), sheet.getLastColumn());
       for(var j in data) {
         var userId = data[j][USER_COL-1];
         var sign = data[j][SIGN_COL-1];
@@ -105,4 +110,55 @@ function getLicenses(userName, dummyVar) {
     }
   }
   return licenseList.join();
+}
+
+/* Prompt for a name to search for and display the results in a dialog box */
+function addMethodDialog() {
+  var ui = SpreadsheetApp.getUi();
+  var response;
+  var editors = SpreadsheetApp.getActiveSpreadsheet()
+    .getSheetByName("All Licenses").getSheetProtection().getUsers();
+  var user = Session.getActiveUser().getEmail();
+  if(editors.indexOf(user) < 0) {
+    response = "You do not have the permission to add methods."
+  } else {
+    var prompt = ui.prompt("Add method",
+      "Enter the name of the new method:",
+      ui.ButtonSet.OK_CANCEL);
+    var name = prompt.getResponseText().trim();
+    if(prompt.getSelectedButton() === ui.Button.OK) {
+      if(addMethod(name)) {
+        response = "Successfully added method \"" + name + "\"";
+      } else {
+        response = "Method could not be created, the name " + name +
+          " is already in use";
+      }
+    }
+  }
+  ui.alert("Add method", response, ui.ButtonSet.OK);
+}
+
+function addMethod(name) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var HEADER = ["Username", "Trainer", "Room responsible signature",
+      "QA manager signature", "Issue date", "Revoke date", "Revoke signature"];
+  var row = ss.getSheetByName("All Licenses").getRange("A1:1").getValues()[0];
+  if(ss.getSheetByName(name) !== null || row.indexOf(name) > -1) {
+    return false;
+  } else {
+    var sheet = ss.insertSheet(name, ss.getNumSheets()+1);
+    var range = sheet.getRange("A1:G1");
+    range.setValues([HEADER]);
+    range = sheet.getRange("E2:F").setNumberFormat("yyyy-MM-dd");
+    sheet = ss.getSheetByName("All Licenses");
+    range = sheet.getRange(1,sheet.getMaxColumns());
+    sheet.insertColumnAfter(sheet.getMaxColumns());
+    newCol = sheet.getRange(1,sheet.getMaxColumns());
+    range.copyTo(newCol);
+    newCol.setValue(name);
+    range = range.offset(1, 0);
+    newCol = newCol.offset(1, 0);
+    range.copyTo(newCol);
+    return true;
+  }
 }
