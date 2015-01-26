@@ -33,7 +33,8 @@ function run() {
       });
     }
   } catch(e) {
-    MailApp.sendEmail("joel.gruselius@scilifelab.se", "Google Apps script error", e.message);
+    // Better to add execution failure notifications via the trigger settings 
+    // MailApp.sendEmail(null, "Google Apps script error", e.message);
   }
 }
 
