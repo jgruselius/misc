@@ -33,7 +33,7 @@ def stats(seq):
 	bases = COMPL_MAP.keys()
 	counts = (seq.count(base) for base in bases)
 	text = "Length: {0}, {1}: {5}%, {2}: {6}%, {3}: {7}%, {4}: {8}%"
-	return text.format(n, *(bases + [100*c/n for c in counts]))
+	return text.format(n, *(list(bases) + [100*c/n for c in counts]))
 
 def lookup(seq):
 	pass
