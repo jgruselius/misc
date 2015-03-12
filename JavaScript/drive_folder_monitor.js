@@ -57,7 +57,8 @@ function getMonitored() {
   var nameList = [];
   for(var i in values) {
     var name = values[i][0];
-    if(name.match(/[A-Z]\.[A-Za-z]+_\d\d_\d\d/)) nameList.push(name);
+    // Matching A.Ac_dd_dd, where A is letter, c is letter/number and d is number
+    if(name.match(/^[A-Z]\.[A-Z][a-z0-9]+_\d\d_\d\d/)) nameList.push(name);
   }
   return nameList;
 }
@@ -68,7 +69,8 @@ function getFiles() {
   folder.files = folder.obj.getFiles();
   var monList = getMonitored();
   folder.monitored = folder.files.filter(function(x) {
-    var match = x.getName().match(/[A-Z]\.[A-Za-z]+_\d\d_\d\d/);
+    // Matching A.Ac_dd_dd, where A is letter, c is letter/number and d is number
+    if(name.match(/^[A-Z]\.[A-Z][a-z0-9]+_\d\d_\d\d/)) nameList.push(name);
     return !!match && monList.indexOf(match[0]) > -1;
   });
   var files = folder.monitored.map(function(x) {

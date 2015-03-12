@@ -161,11 +161,9 @@ function convertToBinaryChannel(seq, method) {
 	// Method 1, using regexp and String.replace():
 	if(method === 1 || typeof method === "undefined") {
 		// G, T uses green laser denoted '0':
-		chan = seq.replace(/g/gi,"0");
-		chan = chan.replace(/t/gi,"0");
+		chan = seq.replace(/(g|t)/gi,"0");
 		// A, C uses red laser denoted '1':
-		chan = chan.replace(/a/gi,"1");
-		chan = chan.replace(/c/gi,"1");
+		chan = chan.replace(/(a|c)/gi,"1");
 	}
 
 	// Method 2 builds a string but does not use regexp:

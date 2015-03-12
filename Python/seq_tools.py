@@ -8,6 +8,25 @@ import time
 
 COMPL_MAP = {'A':'T','T':'A','C':'G','G':'C'}
 
+CODON_MAP = {
+	'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
+	'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
+	'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K',
+	'AGC':'S', 'AGT':'S', 'AGA':'R', 'AGG':'R',
+	'CTA':'L', 'CTC':'L', 'CTG':'L', 'CTT':'L',
+	'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCT':'P',
+	'CAC':'H', 'CAT':'H', 'CAA':'Q', 'CAG':'Q',
+	'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGT':'R',
+	'GTA':'V', 'GTC':'V', 'GTG':'V', 'GTT':'V',
+	'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCT':'A',
+	'GAC':'D', 'GAT':'D', 'GAA':'E', 'GAG':'E',
+	'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G',
+	'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S',
+	'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L',
+	'TAC':'Y', 'TAT':'Y', 'TAA':'_', 'TAG':'_',
+	'TGC':'C', 'TGT':'C', 'TGA':'_', 'TGG':'W',
+	}
+
 def length(seq):
 	return len(seq)
 
@@ -35,6 +54,25 @@ def stats(seq):
 	text = "Length: {0}, {1}: {5}%, {2}: {6}%, {3}: {7}%, {4}: {8}%"
 	return text.format(n, *(list(bases) + [100*c/n for c in counts]))
 
+def find_kmers(seq, k):
+	kmers = []
+	n = len(seq)
+	for i in range(0, n-k+1):
+		kmers.append(seq[i:i+k])
+	return kmers
+
+def count_kmers(seq, k):
+	kmers = find_kmers(seq, k)
+	counts = {}
+	for k in kmers:
+		counts[k] = seq.count(k)
+	return counts
+
+def translate(seq):
+	codons = (seq[i:i+3] for i in range(0,len(seq),3))
+	peptide = (CODON_MAP[c] if c in CODON_MAP else "?" for c in codons)
+	return "".join(peptide)
+
 def lookup(seq):
 	pass
 
@@ -48,11 +86,16 @@ def main(args):
 		"c":complement, "complement":complement,
 		"rc":reverseComplement, "rcomplement":reverseComplement,
 		"s":search, "search":search,
-		"i":stats, "info":stats
+		"i":stats, "info":stats,
+		"t":translate, "translate":translate,
+		"k":find_kmers, "find_kmers":find_kmers,
+		"kc":count_kmers, "count_kmers":count_kmers
 	}
 	if args.command in options:
 		if args.command == "s":
 			print(options[args.command](args.seq, args.query))
+		elif args.command == "k" or args.command == "kc":
+			print(options[args.command](args.seq, int(args.k)))
 		else:
 			print(options[args.command](args.seq))
 	else:
@@ -71,6 +114,13 @@ if __name__ == "__main__":
 	sp.add_argument("seq", help=helpString)
 	sp.add_argument("query", help="The " + helpString + " to search for")
 	s.add_parser("i", help="Show info about sequence").add_argument("seq", help=helpString)
+	s.add_parser("t", help="Return the translated sequence").add_argument("seq", help=helpString)
+	sp = s.add_parser("k", help="Find k-mers")
+	sp.add_argument("seq", help=helpString)
+	sp.add_argument("k", help="k-mer length")
+	sp = s.add_parser("kc", help="Count k-mers")
+	sp.add_argument("seq", help=helpString)
+	sp.add_argument("k", help="k-mer length")
 	args = p.parse_args()
 	main(args)
 
