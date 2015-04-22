@@ -1,10 +1,11 @@
 # This script finds all files with identical file names in a folder structure
-# and calculates their hash
+# and compares them by hash
 
 import os
 import sys
 import hashlib
 from colorama import Fore, Back, Style
+import time
 
 # Traverses the directory tree and returns a dict mapping all file names found
 # more than once to a list of path-hash pairs:
@@ -19,11 +20,9 @@ def traverse(top):
 				# the collection:
 				prev = fnames[file]
 				if not file in fhash:
-					# +++ REMOVE: fhash[file] = [{f: hashfile(f, hashlib.sha1())} for f in (prev, path)]
 					# We assume two identically named files cannot have the same path:
 					fhash[file] = {f: hashfile(f, hashlib.sha1()) for f in (prev, path)}
 				else:
-					# +++ REMOVE: fhash[file].append({path: hashfile(path, hashlib.sha1())})
 					# We assume two identically named files cannot have the same path:
 					fhash[file][path] = hashfile(path, hashlib.sha1())
 			else:
@@ -31,31 +30,36 @@ def traverse(top):
 				fnames[file] = path
 	return fhash
 
+# Print paths for each filename grouped by hash (in color!)
 def print_dupes(top):
 	file_dict = traverse(top)
 	for file, fdict in file_dict.items():
-		print("{}{}{} was encountered {!s} times:".format(Fore.BLUE, file, Fore.RESET, len(fdict)))
+		print("{}{}{} was encountered {!s} times:".format(Fore.BLUE, file,
+			Fore.RESET, len(fdict)))
+		# Create a list of filepaths for each unique hash:
 		uniques = {}
 		for path, hash in fdict.items():
 			if hash in uniques:
 				uniques[hash].append(path)
 			else:
 				uniques[hash] = [path]
+		# Print the filepaths grouped by hash:
 		for hash, paths in uniques.items():
-			print("  {}[{}]{}\t{!s} identical file(s) in:".format(Fore.RED, hash[:8], Fore.RESET, len(paths)))
+			print("  {}[{}]{}\t{!s} identical file{} in:".format(Fore.RED,
+				hash[:8], Fore.RESET, len(paths), "s" if len(paths)>1 else ""))
 			for path in paths:
-				print("    {}{}/{}".format(Fore.YELLOW, os.path.split(os.path.relpath(path, start=top))[0], Fore.RESET))
+				print("    {}{}/{}".format(Fore.YELLOW,
+					os.path.split(os.path.relpath(path, start=top))[0],
+						Fore.RESET))
 		print("\n")
 
+# Print paths for each filename (ungrouped, no color)
 def print_dupes_unsorted(top):
 	file_dict = traverse(top)
-	for file, flist in file_dict.items():
-		print("{0} was encountered {1!s} times:".format(file, len(flist)))
-		for f in file_dict[file]:
-			path = os.path.split("".join(f.keys()))[0] + "/"
-			# Just print the first part of the hash:
-			h =  "".join(f.values())[:8]
-			print("{0}\n{1}".format(path, h))
+	for file, fdict in file_dict.items():
+		print("{0} was encountered {1!s} times:".format(file, len(fdict)))
+		for path, hash in fdict.items():
+			print("{0}/\n{1}".format(os.path.split(os.path.relpath(path, start=top))[0], hash[:8]))
 		print("\n")
 
 def hashfile(path, hasher, blocksize=65536):
@@ -65,6 +69,19 @@ def hashfile(path, hasher, blocksize=65536):
 			hasher.update(buf)
 			buf = file.read(blocksize)
 	return hasher.hexdigest()
+
+def benchmark(path, n=99):
+	temp = sys.stdout
+	sys.stdout = None
+	res = []
+	for f in (print_dupes, print_dupes_unsorted):
+		t0 = time.clock()
+		for i in range(n):
+			f(path)
+		t1 = time.clock() - t0
+		res.append("{}: {:.3f}s ({:.5f}s per iteration)\n".format(f.__name__, t1, t1/n))
+	sys.stdout = temp
+	print("".join(res))
 
 def main(args):
 	path = os.path.abspath(os.path.expanduser(os.path.normpath(args[0])))
