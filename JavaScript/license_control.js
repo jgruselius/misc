@@ -13,6 +13,14 @@
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++80
 
+/**
+ * @OnlyCurrentDoc
+ */
+
+function onInstall() {
+  onOpen();
+}
+
 /* Add a menu with custom functions */
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
@@ -20,8 +28,15 @@ function onOpen() {
     .addItem("Refresh now", "refreshLastUpdate")
     .addItem("Search","searchPrompt")
     .addItem("Add method", "addMethodDialog")
+    .addItem("Show instructions", "showHelpPanel")
       .addToUi();
   copyAndTranspose();
+  showHelpPanel();
+}
+
+function showHelpPanel() {
+  var html = "<title>Instructions</title> <style> div {padding: 1.2em; font-family: Helvetica, Arial; font-size: 0.7em; } li {margin-bottom: 4px; } </style> <div> <h3>To issue licences</h3> <ol> <li>Locate the sheet for the instrument or method in question</li> <li>Make sure any previous licenses for the user has been revoked (see below) by searching (CTRL+F or &#8984;+F)</li> <li>Add the username of the licensee on a new row, this is the scilifelab email account username of format first.lastname</li> <li>Add the username of the person who has trained the licensee</li> <li>Sign the instrument responsible signature column to attest that the user has been trained</li> <li>Sign the QA manager signature column</li> <li>Add an issue date</li> </ol> <h3>To revoke license</h3> <ol> <li>Add a revoke date to the revoke date column</li> <li>Sign the revoke date signature column</li> </ol> <h3>To add an instrument or method</h3> <ol> <li>Select <b>Licenses &rsaquo; Add method</b> from the menu bar and enter the method name in the dialog window. The name must be unique.</li> </ol> <h3>To list licenses for an instrument or method</h3> <ol type=\"a\"> <li>View the <b>All Licenses</b> sheet for a list of all users with licenses for each instrument with user names in rows</li> <li>View the <b>All Licenses (T)</b> for the same as above but with user names in columns (use <b>Licenses &rsaquo; Refresh now</b> to update)</li> </ol> <h3>To list licenses for a particular user</h3> <ol> <li>Select <b>Licenses &rsaquo; Search</b> from the menu bar and enter the user in the dialog window. Use the format <code>firstname.lastname</code></li> </ol> <h3>To withdraw an instrument or method</h3> A new document version needs to be written and validated. </font></div>";
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput(html).setTitle("Instructions"));
 }
 
 /* Indicate that the spreadsheet has been changed since last refresh */
@@ -74,11 +89,15 @@ function copyAndTranspose() {
     .getRange(1,1,t.length,t[0].length).setValues(t);
 }
 
-/*
- Return a comma-separated string of all the sheet names where
- the specified userName string was found together with a valid 
- issue date. Search only sheets with string "Username" in cell A1:
-*/
+/**
+ * Return a comma-separated string of all the sheet names where
+ * the specified userName string was found together with a valid 
+ * issue date. Search only sheets with string "Username" in cell A1.
+ *
+ * @param {string} userName The string to search for.
+ * @param {object} dummyVar To work around return value caching.
+ * @customfunction
+ */
 function getLicenses(userName, dummyVar) {
   // Column in sheet with user ID, QA manager signature
   // and issue/revoke dates:
@@ -112,7 +131,7 @@ function getLicenses(userName, dummyVar) {
   return licenseList.join();
 }
 
-/* Prompt for a name to search for and display the results in a dialog box */
+/* Prompt for a method name and add if unique and user as permissions */
 function addMethodDialog() {
   var ui = SpreadsheetApp.getUi();
   var response;
