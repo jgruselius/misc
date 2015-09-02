@@ -1,5 +1,7 @@
-# This script finds all files with identical file names in a folder structure
-# and compares them by hash
+# This script finds all files with identical file names in a folder
+# structure and compares them by hash
+
+### TODO: Implement support for searching multiple paths
 
 import os
 import sys
@@ -9,37 +11,38 @@ import time
 
 # Traverses the directory tree and returns a dict mapping all file names found
 # more than once to a list of path-hash pairs:
-def traverse(top, max_depth=None):
+def traverse(paths, max_depth=None):
 	fnames = {}
-	fhash = {"__root__": top}
+	fhash = {"__roots__": paths}
 	i = 0
-	for root, dirs, files in os.walk(top, topdown=False):
-		for file in files:
-			path = os.path.join(root, file)
-			if file in fnames:
-				# If the last encounter was the first, also add that file to
-				# the collection:
-				prev = fnames[file]
-				if not file in fhash:
-					# We assume two identically named files cannot have the same path:
-					fhash[file] = {f: hashfile(f, hashlib.sha1()) for f in (prev, path)}
+	for top in paths:
+		for root, dirs, files in os.walk(top, topdown=False):
+			for file in files:
+				path = os.path.join(root, file)
+				if file in fnames:
+					# If the last encounter was the first, also add that file to
+					# the collection:
+					prev = fnames[file]
+					if not file in fhash:
+						# We assume two identically named files cannot have the same path:
+						fhash[file] = {f: hashfile(f, hashlib.sha1()) for f in (prev, path)}
+					else:
+						# We assume two identically named files cannot have the same path:
+						fhash[file][path] = hashfile(path, hashlib.sha1())
 				else:
-					# We assume two identically named files cannot have the same path:
-					fhash[file][path] = hashfile(path, hashlib.sha1())
-			else:
-				# Temporarily store path as well if filename should be encountered again:
-				fnames[file] = path
-		i += 1
-		# Stop if we have descended deeper than max_depth in the directory tree:
-		if max_depth != None and i >= max_depth:
-			break
+					# Temporarily store path as well if filename should be encountered again:
+					fnames[file] = path
+			i += 1
+			# Stop if we have descended deeper than max_depth in the directory tree:
+			if max_depth != None and i >= max_depth:
+				break
 	return fhash
 
 # Print paths for each filename grouped by hash (in color!)
 def print_dupes(dup_obj):
-	top = dup_obj["__root__"]
+	top = dup_obj["__roots__"]
 	for file, fdict in dup_obj.items():
-		if file is "__root__":
+		if file is "__roots__":
 			continue
 		print("{}{}{} was encountered {!s} times:".format(Fore.BLUE, file,
 			Fore.RESET, len(fdict)))
@@ -56,20 +59,18 @@ def print_dupes(dup_obj):
 				hash[:8], Fore.RESET, len(paths), "s" if len(paths)>1 else ""))
 			for path in paths:
 				print("    {}{}/{}".format(Fore.YELLOW,
-					os.path.split(os.path.relpath(path, start=top))[0],
-						Fore.RESET))
+					os.path.split(os.path.relpath(path))[0], Fore.RESET))
 		print("\n")
 
 # Print paths for each filename (ungrouped, no color)
 def print_dupes_unsorted(dup_obj):
-	top = dup_obj["__root__"]
+	top = dup_obj["__roots__"]
 	for file, fdict in dup_obj.items():
-		if file is "__root__":
+		if file is "__roots__":
 			continue
 		print("{0} was encountered {1!s} times:".format(file, len(fdict)))
 		for path, hash in fdict.items():
-			print("{0}/\n{1}".format(os.path.split(os.path.relpath(path,
-				start=top))[0], hash[:8]))
+			print("{0}/\n{1}".format(os.path.split(os.path.relpath(path))[0], hash[:8]))
 		print("\n")
 
 def hashfile(path, hasher, blocksize=65536):
@@ -80,8 +81,8 @@ def hashfile(path, hasher, blocksize=65536):
 			buf = file.read(blocksize)
 	return hasher.hexdigest()
 
-def benchmark(path, n=99):
-	dup_obj = traverse(path)
+def benchmark(paths, n=99):
+	dup_obj = traverse(paths)
 	temp = sys.stdout
 	sys.stdout = None
 	res = []
@@ -95,14 +96,16 @@ def benchmark(path, n=99):
 	print("".join(res))
 
 def main(args):
-	path = os.path.abspath(os.path.expanduser(os.path.normpath(args[0])))
-	if os.path.exists(path):
-		print_dupes(traverse(path))
+	paths = [os.path.abspath(os.path.expanduser(os.path.normpath(p))) for p in args]
+	bad_paths = [p for p in paths if not os.path.exists(p)]
+	if bad_paths:
+		for p in bad_paths:
+			print("The directory \"{}\" does not exist".format(p))
 	else:
-		print("The directory \"{}\" does not exist".format(path))
+		print_dupes(traverse(paths))
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
-		print("Usage:\n\tpython {0} <dir>".format(os.path.basename(sys.argv[0])))
+		print("Usage:\n\tpython {0} [path ...]".format(os.path.basename(sys.argv[0])))
 	else:
 		main(sys.argv[1:])
