@@ -1,5 +1,5 @@
 /* 
- Joel Gruselius | 2014-04-09
+ Joel Gruselius | 2015-09
 
  (Google Apps script)
 
@@ -105,6 +105,7 @@ function getLicenses(userName, dummyVar) {
   var SIGN_COL   = 4;
   var ISSUE_COL  = 5;
   var REVOKE_COL = 6;
+  var maxCol = Math.max(USER_COL,SIGN_COL,ISSUE_COL,REVOKE_COL);
   
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   var licenseList = [];
@@ -113,16 +114,29 @@ function getLicenses(userName, dummyVar) {
     var sheet = sheets[i];
     var data  = sheet.getSheetValues(1, 1, 1, 1);
     if(data[0][0] === "Username") {
-      data = sheet.getSheetValues(2, 1, sheet.getLastRow(), sheet.getLastColumn());
+      data = sheet.getSheetValues(2, 1, sheet.getLastRow(), maxCol);
       for(var j in data) {
         var userId = data[j][USER_COL-1];
-        var sign = data[j][SIGN_COL-1];
-        var issueDate = new Date(data[j][ISSUE_COL-1]);
-        var revokeDate = new Date(data[j][REVOKE_COL-1]);
-        var valid = (userId === userName) && sign && isFinite(issueDate)
-          && (!isFinite(revokeDate) || issueDate > revokeDate);
-        if(valid) {
-          licenseList.push(sheet.getName());
+        if(userId === userName) {
+          var error = null;
+          var sign = data[j][SIGN_COL-1].trim();
+          var issueDate = new Date(data[j][ISSUE_COL-1]);
+          var revokeDate = data[j][REVOKE_COL-1];
+          if(!sign) {
+            error = "MISSING SIGNATURE";
+          } else if(!issueDate || !isFinite(issueDate)) {
+            error = "DATE ERROR"; 
+          } else if(!!revokeDate) {
+            revokeDate = new Date(revokeDate);
+            if(!isFinite(revokeDate)) {
+              error = "DATE ERROR";
+            }
+          }
+          if(error) {
+            licenseList.push(error + "__" + sheet.getName());
+          } else if(issueDate > revokeDate) {
+            licenseList.push(sheet.getName());
+          }
           break;
         }
       }
