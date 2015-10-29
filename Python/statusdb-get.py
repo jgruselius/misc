@@ -104,6 +104,37 @@ def write_csv(resp, out_file):
                              for i, lane in fc["value"].items()
                              for bc, reads in lane.items()])
 
+def write_simple_json(resp, out_file):
+    def _simplify():
+        obj = resp.json()
+        for row in obj["rows"]:
+            key = row["key"]
+            value = row["value"]
+            yield json.dumps({key: value})
+    
+    for line in _simplify():
+        out_file.write("{}\n".format(line))
+
+def write_custom(resp, out_file):
+    header = ["project","app","facility","sample_type","prep",
+        "n_samples","rc_fail","prep_fail","lanes","sequencer","open_date",
+        "close_date","queue_date","samples_date","sequenced_date","deliver_date"
+        ,"prep_date","qc_date","rc_date","order_date"]
+    obj = resp.json()
+    s = "\t".join(header)
+    out_file.write("{}\n".format(s))
+    for e in obj["rows"]:
+        row = []
+        vals = e["value"]
+        for x in header:
+            if x in vals and vals[x] != None and vals[x] != "undefined":
+                row.append(vals[x])
+            else:
+                row.append("")
+        s = "\t".join(row)
+        out_file.write("{}\n".format(s))
+
+
 if __name__ == "__main__":
     # Parse command-line arguments:
     parser = argparse.ArgumentParser(description="Query a CouchDB database")
@@ -111,13 +142,18 @@ if __name__ == "__main__":
     parser.add_argument("--out", help="File to write response to")
     parser.add_argument("--url", help="Database URL", default="http://tools-dev.scilifelab.se:5984/analysis/_temp_view")
     parser.add_argument("--csv", help="Convert response to CSV", action="store_true")
+    parser.add_argument("-s", "--simplify", help="Omit database id's", action="store_true")
     args = parser.parse_args()
 
     if args.csv:
         write_func = write_csv_gen
     else:
-        write_func = write_json
+        if args.simplify:
+            write_func = write_simple_json
+        else:
+            write_func = write_json
 
+    write_func = write_custom
     resp = get_data(args.url, args.jsfile)
 
     if args.out:
