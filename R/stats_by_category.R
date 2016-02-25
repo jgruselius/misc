@@ -7,13 +7,13 @@ stats_by_category <- function(df, categ, group1, group2=NULL, na.rm=FALSE) {
 	sfun <- function(x, col) {
 		num <- as.numeric(x[[col]])
 		c(count  = length(num),
-		  min    = min(num),
-		  max    = max(num),
-		  mean   = mean(num),
-		  median = median(num),
-		  sum    = sum(num),
-		  stdev  = sd(num),
-		  cv     = sd(num) / mean(num))
+		  min    = min(num,na.rm=T),
+		  max    = max(num,na.rm=T),
+		  mean   = mean(num,na.rm=T),
+		  median = median(num,na.rm=T),
+		  sum    = sum(num,na.rm=T),
+		  stdev  = sd(num,na.rm=T),
+		  cv     = sd(num,na.rm=T) / mean(num))
 	}
 	if(na.rm) df <- df[complete.cases(df[,c(categ, group1, group2)]),]
 	summary <- ddply(df, c(group1, group2), .fun=sfun, categ)

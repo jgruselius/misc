@@ -1,9 +1,14 @@
 plotPlate <- function(fileName, val, plateCoord="Well", splitBy=NULL) {
 	require(ggplot2)
-	if(!file.exists(fileName)) {
-		stop(paste("file:",fileName,"does not exist"))
+	if(is.data.frame(fileName)) {
+		dat <- fileName
+	} else {
+		if(file.exists(fileName)) {
+			dat <- read.csv(file=fileName,head=T,as.is=T,na.strings=c("NA","N/A","Overflow"))
+		} else {
+			stop(paste("file:",fileName,"does not exist"))
+		}
 	}
-	dat <- read.csv(file=fileName,head=TRUE,as.is=TRUE,na.strings=c("NA","N/A"))
 	dat$plateRow <- substring(dat[[plateCoord]],1,1)
 	dat$plateCol <- as.numeric(substring(dat[[plateCoord]],2))
 	dat$numVals <- as.numeric(dat[,val])
