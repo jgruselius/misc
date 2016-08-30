@@ -1,5 +1,5 @@
 # Author: Joel Gruselius
-# Version: 2013-11-21
+# Version: 2016-08-30
 # Description: Various simple but useful methods for nucleotide sequences
 # to be used in a terminal.
 
@@ -27,6 +27,15 @@ CODON_MAP = {
 	'TGC':'C', 'TGT':'C', 'TGA':'_', 'TGG':'W',
 	}
 
+# IUPAC data; Average masses of monophosphate deoxy nucleotides:
+WEIGHTS = {
+	'A': 331.2218,
+	'C': 307.1971,
+	'G': 347.2212,
+	'T': 322.2085,
+	'water': 18.0153
+}
+
 def length(seq):
 	return len(seq)
 
@@ -45,14 +54,6 @@ def search(seq, query):
 	seqList = [substr.lower() for substr in seq.split(query)]
 	match = "|{0}|".format(query)
 	return match.join(seqList)
-
-def stats(seq):
-	seq = seq.replace(" ","")
-	n = len(seq)
-	bases = COMPL_MAP.keys()
-	counts = (seq.count(base) for base in bases)
-	text = "Length: {0}, {1}: {5}%, {2}: {6}%, {3}: {7}%, {4}: {8}%"
-	return text.format(n, *(list(bases) + [100*c/n for c in counts]))
 
 def find_kmers(seq, k):
 	kmers = []
@@ -76,12 +77,37 @@ def translate(seq):
 def lookup(seq):
 	pass
 
+def weigh(seq):
+	counts = {'A': 0, 'T': 0, 'C': 0, 'G': 0}
+	for nt in counts:
+		n = seq.count(nt)
+		counts[nt] += n
+		counts[COMPL_MAP[nt]] += n
+	total = 0
+	for nt in counts:
+		total += counts[nt] * WEIGHTS[nt]
+	total += len(seq) * WEIGHTS['water']
+	return total
+
+def stats(seq):
+	seq = seq.replace(" ","")
+	n = len(seq)
+	bases = COMPL_MAP.keys()
+	counts = (seq.count(base) for base in bases)
+	weight = weigh(seq)/1000
+	text = ("Length: {0}\nWeight: {1:.3g} KDa (dsDNA)\nBase composition:\n"
+				"\t{2}: {6:.2%}\n"
+				"\t{3}: {7:.2%}\n"
+				"\t{4}: {8:.2%}\n"
+				"\t{5}: {9:.2%}")
+	return text.format(n, weight, *(list(bases) + [c/n for c in counts]))
+
 def help():
 	return "Usage:\n\tpython <command> <sequence>\n"
 
 def main(args):
 	t = time.clock()
-	options = {"l":length, "length":length, 
+	options = {"l":length, "length":length,
 		"r":reverse, "reverse":reverse,
 		"c":complement, "complement":complement,
 		"rc":reverseComplement, "rcomplement":reverseComplement,
@@ -89,7 +115,8 @@ def main(args):
 		"i":stats, "info":stats,
 		"t":translate, "translate":translate,
 		"k":find_kmers, "find_kmers":find_kmers,
-		"kc":count_kmers, "count_kmers":count_kmers
+		"kc":count_kmers, "count_kmers":count_kmers,
+		"w":weigh, "weight":weigh
 	}
 	if args.command in options:
 		if args.command == "s":
@@ -100,7 +127,7 @@ def main(args):
 			print(options[args.command](args.seq))
 	else:
 		print(help())
-	print("Timer: {0} s".format(time.clock()-t))
+	# print("Timer: {0:.3g} s".format(time.clock()-t))
 
 if __name__ == "__main__":
 	p = argparse.ArgumentParser(description="Various simple but useful " +
@@ -121,6 +148,7 @@ if __name__ == "__main__":
 	sp = s.add_parser("kc", help="Count k-mers")
 	sp.add_argument("seq", help=helpString)
 	sp.add_argument("k", help="k-mer length")
+	s.add_parser("w", help="Calculate weight of sequence").add_argument("seq", help=helpString)
 	args = p.parse_args()
 	main(args)
 
