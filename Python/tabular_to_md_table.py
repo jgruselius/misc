@@ -37,8 +37,8 @@ def _convert_lines2():
 	table = [line.strip().split("\t") for line in fileinput.input() if line.strip()]
 	# Transpose:
 	table_t = list(map(list, itertools.zip_longest(*table)))
-	# Check whether all values in column except heading is numeric:
-	numeric = [all([_is_number(x) for x in row[1:]]) for row in table_t]
+	# Check whether all values in column except heading is numeric (or blank):
+	numeric = [all([not (x and x.strip()) or _is_number(x) for x in row[1:]]) for row in table_t]
 	# Determine the widest string in column:
 	lengths = [[len(x) if x else 0 for x in row] for row in table_t]
 	lengths = [max(x) if max(x) <= COL_MAX else COL_MAX for x in lengths]

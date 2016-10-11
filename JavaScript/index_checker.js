@@ -30,7 +30,7 @@ function flattenArray(arr) {
 }
 
 /*
- Find all indexes that are compatible with the given one(s)  
+ Find all indexes that are compatible with the given one(s)
 */
 function findCompatibles(indexSequences) {
 	var str = "";
@@ -40,9 +40,9 @@ function findCompatibles(indexSequences) {
 		indexSequences = flattenArray(indexSequences);
 	}
 	for(var index in indexReference) {
-	if(evaluateIndexes(indexSequences.concat(indexReference[index]))) {
-		str += index + " ";
-	}
+		if(evaluateIndexes(indexSequences.concat(indexReference[index]))) {
+			str += index + " ";
+		}
 	}
 	return str;
 }
@@ -52,7 +52,7 @@ function findCompatibles(indexSequences) {
 */
 function indexLookup(codes) {
 	var seqs = new Array(codes.length);
-	var seq; 
+	var seq;
 	for(var i = 0, n = codes.length; i < n; i++) {
 		seq = indexTable(codes[i]);
 		if(typeof seq === "undefined") {
@@ -65,7 +65,7 @@ function indexLookup(codes) {
 }
 
 /*
- Constructs an array of 'size' strings with randomized sequences 
+ Constructs an array of 'size' strings with randomized sequences
  of 'length' characters A, C, T, G.
 */
 function constructTestSet(size, length) {
@@ -99,7 +99,7 @@ function evaluateIndexes2(indexList) {
 }
 
 /*
- Iterates over all strings in 'seqs' and verifies they are of equal lenght, 
+ Iterates over all strings in 'seqs' and verifies they are of equal lenght,
  only contain characters A, T, C, G and converts them to upper-case.
 */
 function verifySequences(seqs) {
@@ -130,8 +130,8 @@ function bitwiseCompabilityCheck(list) {
 		for(var i = 0, n = list.length; i < n ; i++) {
 			arr[i] = parseInt(list[i], 2);
 		}
-	} else { 
-		arr = list; 
+	} else {
+		arr = list;
 	}
 	var zeroCheck = zeroMask;
 	var oneCheck = oneMask;
@@ -146,13 +146,13 @@ function bitwiseCompabilityCheck(list) {
 	using XOR against a one-mask will then give non-zero
 
 	A one bit in 'oneCheck' means all bits in that position are one,
-	using XOR against a zero-mask will then give non-zero 
+	using XOR against a zero-mask will then give non-zero
 	*/
 	return ((oneMask ^ zeroCheck) + (zeroMask ^ oneCheck) == 0);
 }
 
 /*
- Constructs a string describing the channel used for each nucleotide in a 
+ Constructs a string describing the channel used for each nucleotide in a
  sequence, e.g. 'ATCTG' returns "10100".
 */
 function convertToBinaryChannel(seq, method) {
@@ -176,7 +176,7 @@ function convertToBinaryChannel(seq, method) {
 			// A, C uses red laser denoted '1':
 			else if(base == "A" || base == "C") { chan += "1" };
 		}
-	} 
+	}
 	// Method 3 calculates the binary integer directly:
 	else if(method === 3) {
 		var base;
@@ -191,7 +191,7 @@ function convertToBinaryChannel(seq, method) {
 	return chan;
 }
 
-/* 
+/*
  This method is much more readable than the bitwise alternative but not as much fun ;(
 */
 function charCountCompabilityCheck(seqs) {

@@ -1,23 +1,26 @@
 # This script finds all files with identical file names in a folder
 # structure and compares them by hash
 
-### TODO: Implement support for searching multiple paths
+### TODO:
 
 import os
 import sys
+import argparse
 import hashlib
 from colorama import Fore, Back, Style
 import time
 
 # Traverses the directory tree and returns a dict mapping all file names found
 # more than once to a list of path-hash pairs:
-def traverse(paths, max_depth=None):
+def find_dupes_by_name(paths, max_depth=None):
 	fnames = {}
 	fhash = {"__roots__": paths}
 	i = 0
+	n = 0
 	for top in paths:
 		for root, dirs, files in os.walk(top, topdown=False):
 			for file in files:
+				n += 1
 				path = os.path.join(root, file)
 				if file in fnames:
 					# If the last encounter was the first, also add that file to
@@ -36,38 +39,107 @@ def traverse(paths, max_depth=None):
 			# Stop if we have descended deeper than max_depth in the directory tree:
 			if max_depth != None and i >= max_depth:
 				break
+	fhash["__scanned__"] = n
+	return fhash
+
+# Base only on hash not filename:
+def find_dupes_by_hash(paths, max_depth=None):
+	fhash = {"__roots__": paths}
+	i = 0
+	n = 0
+	for top in paths:
+		for root, dirs, files in os.walk(top, topdown=False):
+			for file in files:
+				n += 1
+				path = os.path.join(root, file)
+				hash = hashfile(path, hashlib.sha1())
+				fhash.setdefault(hash,[]).append(path)
+			i += 1
+			# Stop if we have descended deeper than max_depth in the directory tree:
+			if max_depth != None and i >= max_depth:
+				break
+	fhash["__scanned__"] = n
+	return fhash
+
+# Filter to size duplicates first
+def find_dupes_by_size(paths, max_depth=None):
+	fsize = {}
+	i = 0
+	n = 0
+	for top in paths:
+		for root, dirs, files in os.walk(top, topdown=False):
+			for file in files:
+				n += 1
+				path = os.path.join(root, file)
+				size = os.path.getsize(path)
+				fsize.setdefault(size,[]).append(path)
+			i += 1
+			# Stop if we have descended deeper than max_depth in the directory tree:
+			if max_depth != None and i >= max_depth:
+				break
+	fhash = {"__roots__": paths}
+	fhash["__scanned__"] = n
+	for size, paths in fsize.items():
+		if len(paths) > 1:
+			for path in paths:
+				hash = hashfile(path, hashlib.sha1())
+				fhash.setdefault(hash,[]).append(path)
 	return fhash
 
 # Print paths for each filename grouped by hash (in color!)
-def print_dupes(dup_obj):
-	top = dup_obj["__roots__"]
+def print_name_dupes(dup_obj, verbose=True):
+	top = dup_obj.pop("__roots__")
+	n_files = dup_obj.pop("__scanned__")
+	n_dups = 0
+	tot_size = 0
 	for file, fdict in dup_obj.items():
-		if file is "__roots__":
-			continue
-		print("{}{}{} was encountered {!s} times:".format(Fore.BLUE, file,
-			Fore.RESET, len(fdict)))
+		if verbose:
+			print("{}{}{} was encountered {!s} times:".format(Fore.BLUE, file,
+				Fore.RESET, len(fdict)))
 		# Create a list of filepaths for each unique hash:
 		uniques = {}
 		for path, hash in fdict.items():
 			if hash in uniques:
 				uniques[hash].append(path)
+				n_dups += 1
+				tot_size += os.path.getsize(path)
 			else:
 				uniques[hash] = [path]
-		# Print the filepaths grouped by hash:
-		for hash, paths in uniques.items():
-			print("  {}[{}]{}\t{!s} identical file{} in:".format(Fore.RED,
-				hash[:8], Fore.RESET, len(paths), "s" if len(paths)>1 else ""))
-			for path in paths:
-				print("    {}{}/{}".format(Fore.YELLOW,
-					os.path.split(os.path.relpath(path))[0], Fore.RESET))
-		print("\n")
+		if verbose:
+			# Print the filepaths grouped by hash:
+			for hash, paths in uniques.items():
+				print("  {}[{}]{}\t{!s} identical file{} in:".format(Fore.RED,
+					hash[:8], Fore.RESET, len(paths), "s" if len(paths)>1 else ""))
+				for path in paths:
+					print("	{}{}/{}".format(Fore.YELLOW,
+						os.path.split(os.path.relpath(path))[0], Fore.RESET))
+			print("\n")
+	print("A total of {!s} duplicates ({}) could be found in {!s} scanned files".format(n_dups, size_format(tot_size), n_files))
+
+# Print paths for each hash (in color!)
+def print_hash_dupes(dup_obj, verbose=True):
+	n_dups = 0
+	tot_size = 0
+	top = dup_obj.pop("__roots__")
+	n_files = dup_obj.pop("__scanned__")
+	for hash, paths in dup_obj.items():
+		l = len(paths)
+		if l > 1:
+			n_dups += (l-1)
+			tot_size += sum([os.path.getsize(f) for f in paths[1:]])
+			if verbose:
+				print("{}[{}]{} ({}) was encountered {!s} times:".format(Fore.BLUE, hash[:8],
+					Fore.RESET, size_format(os.path.getsize(paths[0])), l))
+				for path in paths:
+					print("	{}{}{}".format(Fore.YELLOW,
+							os.path.relpath(path), Fore.RESET))
+				print("\n")
+	print("A total of {!s} duplicates ({!s}) could be found in {!s} scanned files".format(n_dups, size_format(tot_size), n_files))
 
 # Print paths for each filename (ungrouped, no color)
 def print_dupes_unsorted(dup_obj):
-	top = dup_obj["__roots__"]
+	top = dup_obj.pop("__roots__")
 	for file, fdict in dup_obj.items():
-		if file is "__roots__":
-			continue
 		print("{0} was encountered {1!s} times:".format(file, len(fdict)))
 		for path, hash in fdict.items():
 			print("{0}/\n{1}".format(os.path.split(os.path.relpath(path))[0], hash[:8]))
@@ -82,7 +154,7 @@ def hashfile(path, hasher, blocksize=65536):
 	return hasher.hexdigest()
 
 def benchmark(paths, n=99):
-	dup_obj = traverse(paths)
+	dup_obj = find_dupes_by_name(paths)
 	temp = sys.stdout
 	sys.stdout = None
 	res = []
@@ -95,17 +167,37 @@ def benchmark(paths, n=99):
 	sys.stdout = temp
 	print("".join(res))
 
+def size_format(num, suffix='B'):
+	for unit in ["","Ki","Mi","Gi","Ti","Pi","Ei","Zi"]:
+		if abs(num) < 1024.0:
+			return "{:.2f} {}{}".format(num, unit, suffix)
+		num /= 1024.0
+	return "{:.2f}{}{}".format(num, 'Yi', suffix)
+
 def main(args):
-	paths = [os.path.abspath(os.path.expanduser(os.path.normpath(p))) for p in args]
+	paths = [os.path.abspath(os.path.expanduser(os.path.normpath(p))) for p in args.paths]
 	bad_paths = [p for p in paths if not os.path.exists(p)]
 	if bad_paths:
 		for p in bad_paths:
 			print("The directory \"{}\" does not exist".format(p))
 	else:
-		print_dupes(traverse(paths))
+		if args.size:
+			print_hash_dupes(find_dupes_by_size(paths), args.sum)
+		elif args.name:
+			print_name_dupes(find_dupes_by_name(paths), args.sum)
+		else:
+			print_hash_dupes(find_dupes_by_hash(paths), args.sum)
 
 if __name__ == "__main__":
-	if len(sys.argv) < 2:
-		print("Usage:\n\tpython {0} [path ...]".format(os.path.basename(sys.argv[0])))
-	else:
-		main(sys.argv[1:])
+	p = argparse.ArgumentParser(description="Find duplicate files")
+	p.add_argument("paths", nargs="+",
+		help="all paths to compare files in")
+	p.add_argument("--sum", action="store_false", default=True,
+		help="Only print summary of search")
+	g = p.add_mutually_exclusive_group()
+	g.add_argument("--size", action="store_true", default=False,
+		help="Only compare files if their size match another")
+	g.add_argument("--name", action="store_true", default=False,
+		help="Only compare files with identical names")
+	args = p.parse_args()
+	main(args)
