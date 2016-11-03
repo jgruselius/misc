@@ -42,7 +42,10 @@ def _convert_lines2():
 	# Determine the widest string in column:
 	lengths = [[len(x) if x else 0 for x in row] for row in table_t]
 	lengths = [max(x) if max(x) <= COL_MAX else COL_MAX for x in lengths]
+	col_length = max([len(line) for line in table])
 	for i, line in enumerate(table):
+		if len(line) < col_length:
+			line.extend([" "] * (col_length - len(line)))
 		text = []
 		for j, col in enumerate(line):
 			if numeric[j]:
