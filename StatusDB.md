@@ -3,21 +3,23 @@ This brief help describes how to query a CouchDB database from a terminal emulat
 For the simplest method, see *3*.
 
 #### 1. In the terminal: ####
-Create a <code>map.json</code> file containing:
+Create a `map.json` file containing:
 ```json
 {"map":"function(doc) { ... }"}
 ```
 Remove all newline characters and make sure to use correct quoting.
 The StatusDB view can then be queried by running:
+
 ```bash
 curl -s -H "Content-Type: application/json" --data "@map.json" \
 "http://USER:PASS@tools-dev.scilifelab.se:5984/flowcells/_temp_view"
 ```
-Where <code>USER</code> and <code>PASS</code> should be replaced with the actual login details to the database server.
+
+Where `USER` and `PASS` should be replaced with the actual login details to the database server.
 
 #### 2. Using the shell script: ####
 
-To use the map function defining a CouchDB view defined in the file <code>mapfunc.js</code>, use the shell script [<code>statusdb-get.sh</code>](https://github.com/jgruselius/misc/blob/master/BASH/statusdb-get.sh):
+To use the map function defining a CouchDB view defined in the file `mapfunc.js`, use the shell script [`statusdb-get.sh`](https://github.com/jgruselius/misc/blob/master/BASH/statusdb-get.sh):
 
 ```bash
 sh statusdb-get.sh <mapfunc.js>
@@ -27,9 +29,10 @@ The script will prompt for server login details.
 
 #### 3. Using the Python script: ####
 
-The above can now be done using the [statusdb-get.py](https://github.com/jgruselius/misc/blob/master/Python/statusdb-get.py) script, which also offers the option to convert database response to comma-separated values.
+The above can now be done using the [`statusdb-get.py`](https://github.com/jgruselius/misc/blob/master/Python/statusdb-get.py) script, which also offers the option to convert database response to comma-separated values.
 
 ##### Example: #####
+
 ```bash
 python "Python/statusdb-get.py" --out "data.csv" \
 --url "http://tools-dev.scilifelab.se:5984/flowcells/_temp_view" --csv \
@@ -39,7 +42,7 @@ python "Python/statusdb-get.py" --out "data.csv" \
 The script will prompt for database login details.
 
 **Note:**
-The <code>--csv</code> option requires a defined JSON format and therefore only works with the [example map function](https://github.com/jgruselius/misc/blob/master/JavaScript/statusdb-index-read-view.js).
+The `--csv` option requires a defined JSON format and therefore only works with the [example map function](https://github.com/jgruselius/misc/blob/master/JavaScript/statusdb-index-read-view.js).
 
 Print usage help by running:
 ```bash

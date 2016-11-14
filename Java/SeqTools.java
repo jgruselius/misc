@@ -86,7 +86,7 @@ public class SeqTools {
 		counts.put('T', 0);
 		counts.put('C', 0);
 		counts.put('G', 0);
-		float n = seq.length();
+		int n = seq.length();
 		char c;
 		for(int i = 0; i < n; i++) {
 			c = seq.charAt(i);
