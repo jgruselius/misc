@@ -7,14 +7,28 @@
 
 */
 
+var p = performanceTest();
+if(print) {
+	print(JSON.stringify(p));
+} else if(console.log) {
+	console.log(JSON.stringify(p))
+}
+
 function performanceTest() {
-	var testSet = constructTestSet(1000, 6);
-	var times = new Array(3);
-	times[0] = new Date().getTime();
-	evaluateIndexes1(testSet);
-	times[1] = new Date().getTime();
+	var testSet = constructTestSet(100000, 12);
+	var times = {};
+	var t0 = new Date().getTime();
+	evaluateIndexes1(testSet,1);
+	times.f1 = new Date().getTime() - t0;
+	t0 = new Date().getTime();
+	evaluateIndexes1(testSet,2);
+	times.f2 = new Date().getTime() - t0;
+	t0 = new Date().getTime();
+	evaluateIndexes1(testSet,3);
+	times.f3 = new Date().getTime() - t0;
+	t0 = new Date().getTime();
 	evaluateIndexes2(testSet);
-	times[2] = new Date().getTime();
+	times.f4 = new Date().getTime() - t0;
 	return times;
 }
 
@@ -84,11 +98,11 @@ function constructTestSet(size, length) {
 	return set;
 }
 
-function evaluateIndexes1(indexList) {
+function evaluateIndexes1(indexList,method) {
 	verifySequences(indexList);
 	var channelSeqs = new Array(indexList.length);
 	for(var i = 0, n = indexList.length; i < n ; i++) {
-		channelSeqs[i] = convertToBinaryChannel(indexList[i]);
+		channelSeqs[i] = convertToBinaryChannel(indexList[i],method);
 	}
 	return bitwiseCompabilityCheck(channelSeqs);
 }

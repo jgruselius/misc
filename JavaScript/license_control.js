@@ -1,4 +1,4 @@
-/* 
+/*
  Joel Gruselius | 2015-09
 
  (Google Apps script)
@@ -6,7 +6,7 @@
  Script for listing sheet names where a string is found.
  Used to list all sheets (of a defined format) where a user ID
  is present along with a valid date.
- 
+
  The refresh function must be used to work around Google's
  caching of return values of custom functions.
 */
@@ -31,6 +31,7 @@ function onOpen() {
     .addItem("Search","searchPrompt")
     .addItem("Add method", "addMethodDialog")
     .addItem("Remove method", "removeMethodDialog")
+    .addItem("Show incomplete entries", "getIncomplete")
     .addItem("Show instructions", "showHelpPanel")
       .addToUi();
   copyAndTranspose();
@@ -56,7 +57,7 @@ function isEditor() {
 /* Indicate that the spreadsheet has been changed since last refresh */
 function onEdit(e) {
   var range = e.source.getRangeByName("Search user!refreshDate");
-  var refreshDate = new Date(range.getValue());
+  var refreshDate = new Date(range.getValue().toString());
   if(refreshDate < new Date()) {
     range.setBackgroundRGB(255, 214, 0);
   }
@@ -77,7 +78,7 @@ function searchPrompt() {
   var query = prompt.getResponseText();
   if(prompt.getSelectedButton() === ui.Button.OK) {
     var t0 = new Date();
-    var result = getLicenses(query, null) || "No valid entries found";
+    var result = getLicenses(query, null, "\n");
     var delta = new Date() - t0;
     ui.alert("Search result for "+query, result, ui.ButtonSet.OK);
   }
@@ -89,6 +90,9 @@ function refreshLastUpdate() {
     .getRangeByName("Search user!refreshDate");
   range.setValue(new Date());
   range.setBackground("white");
+  range = SpreadsheetApp.getActiveSpreadsheet()
+    .getRangeByName("searchResult");
+  range.setFormula('=IF(REGEXMATCH($A$3,"^\w+\.\w+$"),getLicenses($A$3,$B$1),"Enter a valid user name")');
   updateMethodList();
   copyAndTranspose();
 }
@@ -97,8 +101,8 @@ function refreshLastUpdate() {
 function copyAndTranspose() {
   var s = SpreadsheetApp.getActiveSpreadsheet();
   var a = s.getSheetByName("All Licenses").getDataRange().getValues();
-  var t = a[0].map(function(col, i) { 
-    return a.map(function(row) { 
+  var t = a[0].map(function(col, i) {
+    return a.map(function(row) {
       return row[i];
     });
   });
@@ -110,7 +114,7 @@ function copyAndTranspose() {
  * method sheets
  */
 function updateMethodList() {
-  var sheet = SpreadsheetApp.getActive().getSheetByName("All Licenses");  
+  var sheet = SpreadsheetApp.getActive().getSheetByName("All Licenses");
   var sheetList = SpreadsheetApp.getActive().getSheets();
   var nameList = [];
   for(var i in sheetList) {
@@ -144,37 +148,39 @@ function updateMethodList() {
 
 /**
  * Return a comma-separated string of all the sheet names where
- * the specified userName string was found together with a valid 
+ * the specified userName string was found together with a valid
  * issue date. Search only sheets with string "Username" in cell A1.
  *
  * @param {string} userName The string to search for.
  * @param {object} dummyVar To work around return value caching.
+ * @param {string} sep Separator between hits in result string.
  * @customfunction
  */
-function getLicenses(userName, dummyVar) {
+function getLicenses(userName, dummyVar, sep) {
+  if(typeof sep === "undefined") var sep = ",";
   // Column in sheet with user ID, QA manager signature
-  // and issue/revoke dates:
-  var USER_COL = 1;
-  var SIGN_COL = 4;
-  var ISSUE_COL = 5;
-  var REVOKE_COL = 6;
-  var maxCol = Math.max(USER_COL,SIGN_COL,ISSUE_COL,REVOKE_COL);
-  
+  // and issue/revoke dates starting from 0:
+  var USER_COL = 0;
+  var SIGN_COL = 3;
+  var ISSUE_COL = 4;
+  var REVOKE_COL = 5;
+  var maxCol = Math.max(USER_COL,SIGN_COL,ISSUE_COL,REVOKE_COL) + 1;
+
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   var licenseList = [];
-  
+
   for(var i in sheets) {
     var sheet = sheets[i];
     var data  = sheet.getSheetValues(1, 1, 1, 1);
     if(data[0][0] === "Username") {
       data = sheet.getSheetValues(2, 1, sheet.getLastRow(), maxCol);
       for(var j in data) {
-        var userId = data[j][USER_COL-1];
+        var userId = data[j][USER_COL].toString();
         if(userId === userName) {
           var error = null;
-          var sign = data[j][SIGN_COL-1].trim();
-          var issueDate = new Date(data[j][ISSUE_COL-1]);
-          var revokeDate = data[j][REVOKE_COL-1];
+          var sign = data[j][SIGN_COL].toString().trim();
+          var issueDate = new Date(data[j][ISSUE_COL].toString());
+          var revokeDate = data[j][REVOKE_COL].toString();
           if(!sign) {
             error = "MISSING SIGNATURE";
           } else if(!issueDate || !isFinite(issueDate)) {
@@ -189,13 +195,13 @@ function getLicenses(userName, dummyVar) {
             licenseList.push(error + "__" + sheet.getName());
           } else if(issueDate > revokeDate) {
             licenseList.push(sheet.getName());
+            break;
           }
-          break;
         }
       }
     }
   }
-  return licenseList.join();
+  return licenseList.length ? licenseList.join(sep) : "No valid entries found for "+userName;
 }
 
 /* Prompt for a method name and add if unique and user as permissions */
@@ -285,6 +291,7 @@ function protectSheet(sheet) {
   reset(range).setDescription("Protected header");
   range = sheet.getRange(2, 4, sheet.getMaxRows(), 2);
   reset(range).setDescription("Protected columns");
+  Logger.log("Added editors " + EDITORS.join(", ") + " to " + sheet.getName());
 }
 
 function resetProtections() {   
@@ -309,30 +316,79 @@ function resetProtections() {
  * current, in use spreadsheet (paste the correct ID on the 1st line):
  */
 function updateData() {
-  var id = "1C9hw9g12AMiwp1musWPjtb5yYHyXG4tl215Y4pedAkU";
+  var id = null;
   var ssOld = SpreadsheetApp.openById(id);
   var ssNew = SpreadsheetApp.getActive();
-  var sheetsOld = ssOld.getSheets();
-  var sheetsNew = ssNew.getSheets();
-  for(var i in sheetsOld) {
-    var name = sheetsOld[i].getName();
-    if(!isMethod(sheetsOld[i])) {
-      Logger.log("Skipping " + name);
-    } else {
-      var newSheet = ssNew.getSheetByName(name);
-      while(newSheet === null) {
-        Logger.log(name + " was not found in new, creating a new method...");
-        addMethod(name);
-        newSheet = ssNew.getSheetByName(name);
+  if(ssOld) {
+    var sheetsOld = ssOld.getSheets();
+    var sheetsNew = ssNew.getSheets();
+    for(var i in sheetsOld) {
+      var name = sheetsOld[i].getName();
+      if(!isMethod(sheetsOld[i])) {
+        Logger.log("Skipping " + name);
+      } else {
+        var newSheet = ssNew.getSheetByName(name);
+        while(newSheet === null) {
+          Logger.log(name + " was not found in new, creating a new method...");
+          addMethod(name);
+          newSheet = ssNew.getSheetByName(name);
+        }
+        Logger.log("Found " + name + " in both, copying data...");
+        newSheet.getDataRange().clearContent();
+        var rangeOld = sheetsOld[i].getDataRange().offset(1, 0);
+        var rangeNew = newSheet.getRange(2,1,rangeOld.getNumRows(),rangeOld.getNumColumns());
+        rangeNew.setValues(rangeOld.getValues());
+        rangeNew = newSheet.getRange(1,1, 1, 7);
+        rangeNew.setValues([["Username", "Trainer", "Responsible signature",
+                             "QA manager signature", "Issue date", "Revoke date", "Revoke signature"]]);
       }
-      Logger.log("Found " + name + " in both, copying data...");
-      newSheet.getDataRange().clearContent();
-      var rangeOld = sheetsOld[i].getDataRange().offset(1, 0);
-      var rangeNew = newSheet.getRange(2,1,rangeOld.getNumRows(),rangeOld.getNumColumns());
-      rangeNew.setValues(rangeOld.getValues());
-      rangeNew = newSheet.getRange(1,1, 1, 7);
-      rangeNew.setValues([["Username", "Trainer", "Responsible signature",
-                           "QA manager signature", "Issue date", "Revoke date", "Revoke signature"]]);
+    }
+  } else {
+    Logger.log("Spreadsheet with ID="+id+" could not be opened.");
+  }
+}
+
+function getIncomplete() {
+  // Column in sheet with user ID, QA manager signature
+  // and issue/revoke dates starting from 0:
+  var COLS = {
+    USER: 0,
+    TR_SIGN: 1,
+    RE_SIGN: 2,
+    QA_SIGN: 3,
+    ISSUE_DATE: 4,
+    REVOKE_DATE: 5,
+    REVOKE_SIGN: 6
+  };
+  var maxCol = 1;
+  for(var c in COLS) {
+    if(COLS[c] >= maxCol) maxCol = COLS[c]+1;
+  }
+
+  var sheets = SpreadsheetApp.getActive().getSheets();
+  var licenseList = [];
+  var errors = [];
+  for(var i in sheets) {
+    var sheet = sheets[i];
+    var data  = sheet.getSheetValues(1, 1, 1, 1);
+    if(data[0][COLS.USER] === "Username") {
+      var sheetName = sheet.getName();
+      data = sheet.getSheetValues(2, 1, sheet.getLastRow(), maxCol);
+      for(var j in data) {
+        var row = data[j];
+        var userId = row[COLS.USER];
+        if(userId) {
+          if(!row[COLS.TR_SIGN]) errors.push(sheetName + ": Trainer signature missing for " + userId);
+          if(!row[COLS.RE_SIGN]) errors.push(sheetName + ": Responsible signature missing for " + userId);
+          if(!row[COLS.QA_SIGN]) errors.push(sheetName + ": QA manager signature missing for " + userId);
+          if(!row[COLS.ISSUE_DATE]) errors.push(sheetName + ": Issue date missing for " + userId);
+          if(row[COLS.REVOKE_DATE].toString() && !row[COLS.REVOKE_SIGN]) errors.push(sheetName + ": Revoke signature missing for " + userId);
+          if(row[COLS.REVOKE_SIGN] && !row[COLS.REVOKE_DATE].toString()) errors.push(sheetName + ": Revoke date missing for " + userId);
+        }
+      }
     }
   }
+  var result = errors.length ? errors.join("\n") : "No errors found.";
+  var ui = SpreadsheetApp.getUi();
+  ui.alert("Missing info scan results", result, ui.ButtonSet.OK);
 }
