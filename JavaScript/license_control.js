@@ -18,6 +18,7 @@
  */
 
 var EDITORS = [];
+var MAX_ROWS = 100;
 
 function onInstall() {
   onOpen();
@@ -184,7 +185,7 @@ function getLicenses(userName, dummyVar, sep) {
           if(!sign) {
             error = "MISSING SIGNATURE";
           } else if(!issueDate || !isFinite(issueDate)) {
-            error = "DATE ERROR"; 
+            error = "DATE ERROR";
           } else if(!!revokeDate) {
             revokeDate = new Date(revokeDate);
             if(!isFinite(revokeDate)) {
@@ -239,6 +240,8 @@ function addMethod(name) {
     var range = sheet.getRange("A1:G1");
     range.setValues([HEADER]);
     range = sheet.getRange("E2:F").setNumberFormat("yyyy-MM-dd");
+    trimSheet(sheet);
+    protectSheet(sheet);
     sheet = ss.getSheetByName("All Licenses");
     range = sheet.getRange(1,sheet.getMaxColumns());
     sheet.insertColumnAfter(sheet.getMaxColumns());
@@ -248,7 +251,6 @@ function addMethod(name) {
     range = range.offset(1, 0);
     newCol = newCol.offset(1, 0);
     range.copyTo(newCol);
-    protectSheet(sheet);
     return true;
   }
 }
@@ -286,7 +288,7 @@ function protectSheet(sheet) {
     p.removeEditors(p.getEditors());
     p.addEditors(EDITORS);
     return p;
-  }); 
+  });
   var range = sheet.getRange(1, 1, 1, sheet.getMaxColumns());
   reset(range).setDescription("Protected header");
   range = sheet.getRange(2, 4, sheet.getMaxRows(), 2);
@@ -294,7 +296,7 @@ function protectSheet(sheet) {
   Logger.log("Added editors " + EDITORS.join(", ") + " to " + sheet.getName());
 }
 
-function resetProtections() {   
+function resetProtections() {
   var ss = SpreadsheetApp.getActive();
   var sheets = ss.getSheets();
   for(var i in sheets) {
@@ -311,7 +313,7 @@ function resetProtections() {
   }
 }
 
-/** 
+/**
  * Use this to update the WIP spreadsheet with data from the
  * current, in use spreadsheet (paste the correct ID on the 1st line):
  */
@@ -391,4 +393,30 @@ function getIncomplete() {
   var result = errors.length ? errors.join("\n") : "No errors found.";
   var ui = SpreadsheetApp.getUi();
   ui.alert("Missing info scan results", result, ui.ButtonSet.OK);
+}
+
+// Remove unused cols and rows so we don't reach Spreadsheet's limit so quickly:
+function trimSheet(sheet) {
+  var lastCol = sheet.getLastColumn();
+  var maxCol = sheet.getMaxColumns();
+  var maxRow = sheet.getMaxRows();
+  if(maxCol > lastCol) {
+    sheet.deleteColumns(lastCol+1, maxCol-lastCol);
+  }
+  if(maxRow > 100) {
+    sheet.deleteRows(101, maxRow-100);
+  }
+}
+
+function trimSheets() {
+  var ss = SpreadsheetApp.getActive();
+  var sheets = ss.getSheets();
+  for(var i in sheets) {
+    var s = sheets[i];
+    if(!isMethod(s)) {
+      Logger.log("Skipping " + s.getName());
+    } else {
+      trimSheet(s);
+    }
+  }
 }
