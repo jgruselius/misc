@@ -1,6 +1,6 @@
 corPlot <- function(df, square=FALSE, method="pearson", type=1) {
 	df_num <- df[sapply(df, is.numeric)]
-	cors <- as.data.frame(cor(df_num, method=method))
+	cors <- as.data.frame(cor(df_num, method=method,use="pairwise.complete.obs"))
 	cors <- cors[rowSums(is.na(cors))<2, colSums(is.na(cors))<2]
 	cors <- get_lower_tri(cors)
 	if(square) { 
@@ -9,7 +9,7 @@ corPlot <- function(df, square=FALSE, method="pearson", type=1) {
 		cors <- as.matrix(abs(cors))
 	}
 	if(type==2) {
-		require(ggplot2, reshape)
+		require(ggplot2, reshape2)
 		cors <- melt(cors, na.rm=T)
 		ggplot(cors, aes(Var1, Var2, fill=value)) + geom_tile() +
 			geom_text(size=2, aes(label=round(value, 2))) +
