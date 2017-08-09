@@ -13,7 +13,7 @@ plotPlate <- function(fileName, val, plateCoord="Well", splitBy=NULL) {
 	dat$plateCol <- as.numeric(substring(dat[[plateCoord]],2))
 	dat$numVals <- as.numeric(dat[,val])
 	platePlot <- ggplot(data=dat,aes(x=plateCol,y=plateRow)) +
-		geom_tile(aes(fill=numVals,na.rm=TRUE)) +
+		geom_raster(aes(fill=numVals),na.rm=TRUE) +
 		scale_x_continuous("Column",breaks=1:12) +
 		scale_y_discrete("Row",limits=rev(LETTERS[1:8])) +
 		scale_fill_gradient(low="white",high="steelblue",name=val) +
