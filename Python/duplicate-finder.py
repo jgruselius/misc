@@ -15,10 +15,13 @@ import time
 def find_dupes_by_name(paths, max_depth=None):
 	fnames = {}
 	fhash = {"__roots__": paths}
-	i = 0
 	n = 0
 	for top in paths:
-		for root, dirs, files in os.walk(top, topdown=False):
+		for root, dirs, files in os.walk(top, topdown=True):
+			depth = root.count(os.sep) - top.count(os.sep)
+			# Stop if we have descended deeper than max_depth in the directory tree:
+			if max_depth != None and depth >= max_depth:
+				del dirs[:]
 			for file in files:
 				n += 1
 				path = os.path.join(root, file)
@@ -35,48 +38,42 @@ def find_dupes_by_name(paths, max_depth=None):
 				else:
 					# Temporarily store path as well if filename should be encountered again:
 					fnames[file] = path
-			i += 1
-			# Stop if we have descended deeper than max_depth in the directory tree:
-			if max_depth != None and i >= max_depth:
-				break
 	fhash["__scanned__"] = n
 	return fhash
 
 # Base only on hash not filename:
 def find_dupes_by_hash(paths, max_depth=None):
 	fhash = {"__roots__": paths}
-	i = 0
 	n = 0
 	for top in paths:
-		for root, dirs, files in os.walk(top, topdown=False):
+		for root, dirs, files in os.walk(top, topdown=True):
+			depth = root.count(os.sep) - top.count(os.sep)
+			# Stop if we have descended deeper than max_depth in the directory tree:
+			if max_depth != None and depth >= max_depth:
+				del dirs[:]
 			for file in files:
 				n += 1
 				path = os.path.join(root, file)
 				hash = hashfile(path, hashlib.sha1())
 				fhash.setdefault(hash,[]).append(path)
-			i += 1
-			# Stop if we have descended deeper than max_depth in the directory tree:
-			if max_depth != None and i >= max_depth:
-				break
 	fhash["__scanned__"] = n
 	return fhash
 
 # Filter to size duplicates first
 def find_dupes_by_size(paths, max_depth=None):
 	fsize = {}
-	i = 0
 	n = 0
 	for top in paths:
-		for root, dirs, files in os.walk(top, topdown=False):
+		for root, dirs, files in os.walk(top, topdown=True):
+			depth = root.count(os.sep) - top.count(os.sep)
+			# Stop if we have descended deeper than max_depth in the directory tree:
+			if max_depth != None and depth >= max_depth:
+				del dirs[:]
 			for file in files:
 				n += 1
 				path = os.path.join(root, file)
 				size = os.path.getsize(path)
 				fsize.setdefault(size,[]).append(path)
-			i += 1
-			# Stop if we have descended deeper than max_depth in the directory tree:
-			if max_depth != None and i >= max_depth:
-				break
 	fhash = {"__roots__": paths}
 	fhash["__scanned__"] = n
 	for size, paths in fsize.items():
@@ -167,7 +164,7 @@ def benchmark(paths, n=99):
 	sys.stdout = temp
 	print("".join(res))
 
-def size_format(num, suffix='B'):
+def size_format(num, suffix="B"):
 	for unit in ["","Ki","Mi","Gi","Ti","Pi","Ei","Zi"]:
 		if abs(num) < 1024.0:
 			return "{:.2f} {}{}".format(num, unit, suffix)
@@ -181,22 +178,25 @@ def main(args):
 		for p in bad_paths:
 			print("The directory \"{}\" does not exist".format(p))
 	else:
-		if args.size:
-			print_hash_dupes(find_dupes_by_size(paths), args.sum)
+		if not args.nosize:
+			print_hash_dupes(find_dupes_by_size(paths, args.depth), args.sum)
 		elif args.name:
-			print_name_dupes(find_dupes_by_name(paths), args.sum)
+			print_name_dupes(find_dupes_by_name(paths, args.depth), args.sum)
 		else:
-			print_hash_dupes(find_dupes_by_hash(paths), args.sum)
+			print_hash_dupes(find_dupes_by_hash(paths, args.depth), args.sum)
 
 if __name__ == "__main__":
-	p = argparse.ArgumentParser(description="Find duplicate files")
+	p = argparse.ArgumentParser(description="""Find duplicate files by hash,
+	    by default only compare the hash of files which size is identical""")
 	p.add_argument("paths", nargs="+",
-		help="all paths to compare files in")
+		help="All paths to compare files in")
 	p.add_argument("--sum", action="store_false", default=True,
 		help="Only print summary of search")
+	p.add_argument("--depth", type=int, action="store", default=None,
+	    help="Max depth to traverse (default = no limit)")
 	g = p.add_mutually_exclusive_group()
-	g.add_argument("--size", action="store_true", default=False,
-		help="Only compare files if their size match another")
+	g.add_argument("--nosize", action="store_true", default=False,
+		help="Compare all files regardless of size (not recommended)")
 	g.add_argument("--name", action="store_true", default=False,
 		help="Only compare files with identical names")
 	args = p.parse_args()
