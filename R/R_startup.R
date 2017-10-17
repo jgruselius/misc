@@ -13,6 +13,7 @@ jCols1 <- c("#0099CC","#FF6666","#FFCC00","#9999FF","#339966","#FF5252")
 jCols2 <- c("#1E88E5","#FF5252","#00C853","#AB47BC","#FFAB00","#00B8D4","#F06292","#69F0AE","#9575CD","#EF6C00","#3F51B5","#C62828","#388E3C","#6A1B9A","#D84315")
 
 # Custom theme for ggthemr:
+require(ggthemr)
 jPalette <- define_palette(
 	swatch = c("#757575","#1E88E5","#FF5252","#00C853","#AB47BC","#FFAB00","#00B8D4","#F06292","#69F0AE","#9575CD","#EF6C00","#3F51B5","#C62828","#388E3C","#6A1B9A","#D84315"),
 	gradient = c(lower = "#67B26F", upper = "#4ca2cd"),
@@ -68,6 +69,10 @@ ggplotRegression2 <- function(fit,yadj=0.5,xadj=0.5,col="lightblue") {
 		annotate("text",x,y,label=lab,parse=T) +
 		xlab(names(fit$model)[2]) +
 		ylab(names(fit$model)[1])
+}
+
+pbpaste <- function() {
+	return(read.table(pipe("pbpaste"),sep="\t",header=T))
 }
 
 cat("Custom configuration loaded...")
