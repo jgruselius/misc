@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import re
 import fileinput
@@ -43,9 +45,9 @@ def convert(file_in, file_out):
 		"Type",
 		"Index",
 		"Raw mean",
-		"Raw CV%",
+		"Raw standard dev",
 		"Conc mean (ng/uL)",
-		"Conc CV%",
+		"Conc CV",
 		"Mark"
 	]
 	# Write data:

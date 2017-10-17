@@ -34,6 +34,16 @@ def write_json(resp, out_file):
     for line in resp.iter_lines(decode_unicode=True):
         out_file.write(line)
 
+def write_simple_json(resp, out_file):
+    def _simplify():
+        obj = resp.json()
+        for row in obj["rows"]:
+            key = row["key"]
+            value = row["value"]
+            yield json.dumps({key: value})
+
+    for line in _simplify():
+        out_file.write("{}\n".format(line))
 
 def flatten(l):
     for val in l.values() if isinstance(l, dict) else l:
@@ -73,15 +83,10 @@ def write_csv_gen(resp, out_file):
                 row.extend(flatten(vals))
                 yield row
 
-    # Parse using generator expression:
-    # it = (json.loads(line.rstrip("\r\n,")) \
-    #   for line in resp.iter_lines(decode_unicode=True) \
-    #   if re.match("\{\"id", line))
-
     writer.writerows(_csv_gen())
 
-
-def write_csv(resp, out_file):
+# CSV formatter for reads per barcode data:
+def write_custom1(resp, out_file):
     # Data object is of format:
     #   Total flowcells:    data["total_rows"]
     #   Offset:             data["offset"]
@@ -103,19 +108,8 @@ def write_csv(resp, out_file):
             writer.writerows([[fc["key"], i, bc, reads]
                              for i, lane in fc["value"].items()
                              for bc, reads in lane.items()])
-
-def write_simple_json(resp, out_file):
-    def _simplify():
-        obj = resp.json()
-        for row in obj["rows"]:
-            key = row["key"]
-            value = row["value"]
-            yield json.dumps({key: value})
-    
-    for line in _simplify():
-        out_file.write("{}\n".format(line))
-
-def write_custom(resp, out_file):
+# CSV formatter for date data:
+def write_custom2(resp, out_file):
     header = ["project","app","facility","sample_type","prep",
         "n_samples","rc_fail","prep_fail","lanes","sequencer","open_date",
         "close_date","queue_date","samples_date","sequenced_date","deliver_date"
@@ -134,6 +128,17 @@ def write_custom(resp, out_file):
         s = "\t".join(row)
         out_file.write("{}\n".format(s))
 
+# CSV formatter for fragment size data:
+def write_custom3(resp, out_file):
+    writer = csv.writer(out_file, delimiter=",")
+    header = ["proj", "app" ,"open", "lib", "prep", "sample", "size", "nm"]
+    obj = resp.json()
+    writer.writerow(header)
+    for e in obj["rows"]:
+        vals = e["value"]
+        for k,v in vals["samples"].items():
+            row = [vals[x] for x in header[:-3]] + [k, v["size"], v["nm"]]
+            writer.writerow(row)
 
 if __name__ == "__main__":
     # Parse command-line arguments:
@@ -153,7 +158,7 @@ if __name__ == "__main__":
         else:
             write_func = write_json
 
-    write_func = write_custom
+    write_func = write_custom3
     resp = get_data(args.url, args.jsfile)
 
     if args.out:
