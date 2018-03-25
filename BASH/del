@@ -1,0 +1,78 @@
+#! /bin/bash
+# 2018-01-25 Joel Gruselius
+
+# Safely delete files and folders by listing them first
+# Note: At the moment symlinks are ignored
+
+# TODO: Print files and folder sizes?
+# TODO: Enumerate file list and allow selection
+
+args=("$@") # store all arguments passed to shell
+
+# Use some color to highlight folders and when files specified explicitly can't
+# be found:
+col_off='\e[0m'
+col_yel='\e[0;33m'
+col_blu='\e[0;94m'
+
+printf '\nFiles and folders to delete:\n\n'
+
+declare -a files
+declare -a folders
+declare -a not_found
+
+for file in "${args[@]}"; do
+  if [[ -f $file ]]; then
+    #f_size=$(wc -c <"$file")
+    printf '\t%s\n' "$file"
+    files+=("$file")
+  elif [[ -d $file ]]; then
+    if [[ ! $file =~ ^\.\.?$ ]]; then
+      printf '\t%b%s/%b\n' $col_blu "$file" $col_off
+      folders+=("$file")
+    fi
+  else
+    printf '\t%bWARNING: %s does not exist%b\n' $col_yel "$file" $col_off
+    not_found+=(file)
+  fi
+done
+echo
+
+# To list also sizes one could use:
+# du -hc "${files[@]}"
+# du -hsc "${folders[@]}"
+# Total size:
+t_size=$(du -hsc --apparent-size "${files[@]}" "${folders[@]}" | awk 'END {print $1}')
+
+# To print files first, then folders, then not found:
+# printf '%s\n' "${files[@]}"
+# printf '%b%s%b\n' $col_blu "${files[@]}" $col_off
+
+# Summarize:
+printf 'Total %s in %s files and %s folders.\n' $t_size ${#files[@]} ${#folders[@]}
+if [[ ${not_found[*]} ]]; then
+  printf '%bWARNING: %d files not found%b\n' $col_yel ${#not_found[@]} $col_off
+fi
+printf '\n'
+
+if [[ ${files[*]} || ${folders[*]} ]]; then
+  read -r -n 1 -p "Delete these files? [y/n] "
+  printf '\n'
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    printf '\n'
+    if [[ ${files[*]} ]]; then
+      rm -v "${files[@]}"
+    fi
+    if [[ ${folders[*]} ]]; then
+      printf 'Default is to only remove empty folders,\n'
+      read -r -n 1 -p "do you want to remove folders recursively? [y/n] "
+      printf '\n\n'
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        rm -vr "${folders[@]}"
+      else
+        rmdir -v "${folders[@]}"
+      fi
+    fi
+  fi
+  printf '\n'
+fi
