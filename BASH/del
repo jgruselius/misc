@@ -14,6 +14,7 @@ args=("$@") # store all arguments passed to shell
 col_off='\e[0m'
 col_yel='\e[0;33m'
 col_blu='\e[0;94m'
+col_wbo='\e[1;37m'
 
 printf '\nFiles and folders to delete:\n\n'
 
@@ -33,7 +34,7 @@ for file in "${args[@]}"; do
     fi
   else
     printf '\t%bWARNING: %s does not exist%b\n' $col_yel "$file" $col_off
-    not_found+=(file)
+    not_found+=("$file")
   fi
 done
 echo
@@ -42,14 +43,18 @@ echo
 # du -hc "${files[@]}"
 # du -hsc "${folders[@]}"
 # Total size:
-t_size=$(du -hsc --apparent-size "${files[@]}" "${folders[@]}" | awk 'END {print $1}')
+if [[ ${files[*]} || ${folders[*]} ]]; then
+  t_size=$(du -hsc --apparent-size "${files[@]}" "${folders[@]}" | awk 'END {print $1}')
+else
+  t_size="0b"
+fi
 
 # To print files first, then folders, then not found:
 # printf '%s\n' "${files[@]}"
 # printf '%b%s%b\n' $col_blu "${files[@]}" $col_off
 
 # Summarize:
-printf 'Total %s in %s files and %s folders.\n' $t_size ${#files[@]} ${#folders[@]}
+printf 'Total %b%s%b in %s files and %s folders.\n' $col_wbo $t_size $col_off ${#files[@]} ${#folders[@]}
 if [[ ${not_found[*]} ]]; then
   printf '%bWARNING: %d files not found%b\n' $col_yel ${#not_found[@]} $col_off
 fi
@@ -64,7 +69,7 @@ if [[ ${files[*]} || ${folders[*]} ]]; then
       rm -v "${files[@]}"
     fi
     if [[ ${folders[*]} ]]; then
-      printf 'Default is to only remove empty folders,\n'
+      printf '\nDefault is to only remove empty folders,\n'
       read -r -n 1 -p "do you want to remove folders recursively? [y/n] "
       printf '\n\n'
       if [[ $REPLY =~ ^[Yy]$ ]]; then
