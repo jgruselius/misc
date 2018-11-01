@@ -9,7 +9,7 @@ corPlot <- function(df, square=FALSE, method="pearson", type=1) {
 		cors <- as.matrix(abs(cors))
 	}
 	if(type==2) {
-		require(ggplot2, reshape2)
+		#require(ggplot2, reshape2)
 		cors <- melt(cors, na.rm=T)
 		ggplot(cors, aes(Var1, Var2, fill=value)) + geom_tile() +
 			geom_text(size=2, aes(label=round(value, 2))) +

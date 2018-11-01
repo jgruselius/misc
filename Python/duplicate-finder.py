@@ -1,7 +1,11 @@
+#!/usr/bin/env python
+
 # This script finds all files with identical file names in a folder
 # structure and compares them by hash
 
 ### TODO:
+#   - Exclude the oldest version of each duplicate set in --pathonly so you can
+#     send the output to e.g. rm to remove duplicates while keeping the oldest.
 
 import os
 import sys

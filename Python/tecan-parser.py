@@ -6,6 +6,18 @@ import fileinput
 import csv
 import os
 
+"""
+0 Well positions
+1 Layout
+2 Replicate Info
+3 Raw data
+4 Raw data - Mean
+5 Raw data - Standard deviation
+6 Single conc. (ng/uL)
+7 Average single conc. (ng/uL)
+8 Average single conc. (ng/uL) - Variation coefficient
+"""
+
 def parse(iterable):
 	# Pattern for matching "Layout" ID:
 	p = re.compile(r"(S[MT])1_(\d{1,2})")
@@ -32,7 +44,7 @@ def parse(iterable):
 				vals[1] = "Standard"
 				vals[0] = ""
 			# Skip some columns:
-			yield(list(vals[i] for i in (0,1,2,4,5,7,8,9)))
+			yield(list(vals[i] for i in (0,1,2,4,5,7,8)))
 
 def convert(file_in, file_out):
 	# Make a list of it to be able to sort:

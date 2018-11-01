@@ -34,7 +34,7 @@ rtext <- function(a=90,hj=1,vj=0.5) {
 }
 
 import <- function(filePath) {
-	nas <- c("NaN","NA","N/A","#N/A","-","--")
+	nas <- c("NaN","NA","N/A","#N/A","-","--","#DIV/0!","#VALUE!")
 	data <- read.delim(filePath,na.strings=nas)
 	if(length(data) < 2) data <- read.csv(filePath,na.strings=nas)
 	if(length(data) < 2) stop(paste("Seems data is neither tab- or comma-separated"))
