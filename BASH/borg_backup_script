@@ -1,0 +1,80 @@
+#! /bin/bash
+
+# Joel Gruselius 2018
+# Script to create backup points with Borg backup
+
+set -o errexit
+
+# borg init -e keyfile-blake2 user@server:share/path/
+
+mount=server/share
+backup=backup_folder
+repo=repo_name
+mountpoint=mountpoint
+datestamp=$(date -j +"%Y%m%d")
+user=server_user
+things=list_of_paths_to_backup
+tmp="$(pwd)"
+
+timestamp() {
+    printf "$(date -j +'%Y-%m-%d %H:%M:%S')"
+}
+
+trap 'cd "$tmp"; echo $(timestamp) Backup interrupted >&2; exit 2' 1
+
+if [ ! -d $mountpoint ]; then
+    printf "Creating moutpoint %s\n" $mountpoint
+    mkdir -vp $mountpoint
+fi
+
+cd $mountpoint || exit 1
+
+if [ ! -d "$backup" ]; then
+    printf "Mounting %s\n" $mount
+    read -rs -p "Password for $user: " pass
+    printf "\n"
+    if ! mount -t smbfs "//$user:$pass@$mount" $mountpoint; then
+        printf "%s could not be mounted!\n" $mount >&2
+        exit 1
+    fi
+fi
+
+path="$mountpoint/$backup/$repo"
+
+# Check if backup path exists:
+if [ ! -d  "$path" ] || [ -L "$path" ]; then
+    printf "%s does not exist!\n" "$path" >&2
+    exit 1
+fi
+
+cd ~ || exit 1
+
+declare -a stuff
+missing=false
+while IFS= read -r item; do
+    if [ -e "$item" ]; then
+        stuff+=("$item")
+    else
+        printf "ERROR: %s does not exist\n" "$item"
+        missing=true
+    fi
+done <$things
+
+if [ "$missing" = true ]; then
+    printf "\nFiles missing -- aborting...\n" >&2
+    exit 1
+fi
+
+borg create -x -C zstd --progress -s --exclude-caches -e "*.DS_Store" "${path}::${datestamp}" "${stuff[@]}"
+
+# Offer to do a prune:
+read -r -n 1 -p "Do you want to prune the repo (keep only last three backups)? [y/n] "
+printf '\n\n'
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    borg prune --progress --list --stats --keep-last 3 "${path}"
+fi
+
+cd "$tmp"
+printf "\n%s Done!\n" "$(timestamp)"
+
+
