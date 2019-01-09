@@ -69,7 +69,7 @@ borg create -x -C zstd --progress -s --exclude-caches -e "*.DS_Store" "${path}::
 
 # Offer to do a prune:
 read -r -n 1 -p "Do you want to prune the repo (keep only last three backups)? [y/n] "
-printf '\n\n'
+printf '\n'
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     borg prune --progress --list --stats --keep-last 3 "${path}"
 fi
