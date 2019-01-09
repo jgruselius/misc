@@ -4,6 +4,7 @@
 # Safely delete files and folders by listing them first
 # Note: At the moment symlinks are ignored
 
+# NOTE: This version is MacOS compatible
 # TODO: Print files and folder sizes?
 # TODO: Enumerate file list and allow selection
 
@@ -11,10 +12,10 @@ args=("$@") # store all arguments passed to shell
 
 # Use some color to highlight folders and when files specified explicitly can't
 # be found:
-col_off='\e[0m'
-col_yel='\e[0;33m'
-col_blu='\e[0;94m'
-col_wbo='\e[1;37m'
+col_off='\033[0m'
+col_yel='\033[0;33m'
+col_blu='\033[0;94m'
+col_wbo='\033[1m'
 
 printf '\nFiles and folders to delete:\n\n'
 
@@ -44,7 +45,7 @@ echo
 # du -hsc "${folders[@]}"
 # Total size:
 if [[ ${files[*]} || ${folders[*]} ]]; then
-  t_size=$(du -hsc --apparent-size "${files[@]}" "${folders[@]}" | awk 'END {print $1}')
+  t_size=$(gdu -hsc --apparent-size "${files[@]}" "${folders[@]}" | awk 'END {print $1}')
 else
   t_size="0b"
 fi
@@ -75,7 +76,7 @@ if [[ ${files[*]} || ${folders[*]} ]]; then
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         rm -vr "${folders[@]}"
       else
-        rmdir -v "${folders[@]}"
+        rmdir "${folders[@]}"
       fi
     fi
   fi
