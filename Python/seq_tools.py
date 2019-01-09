@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Author: Joel Gruselius
 # Version: 2016-08-30
 # Description: Various simple but useful methods for nucleotide sequences

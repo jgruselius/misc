@@ -75,4 +75,8 @@ pbpaste <- function() {
 	return(read.table(pipe("pbpaste"),sep="\t",header=T))
 }
 
+pbcopy <- function(x) {
+	write.table(x,file=pipe("pbcopy"),sep="\t",row.names=F)
+}
+
 cat("Custom configuration loaded...")
