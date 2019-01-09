@@ -75,8 +75,9 @@ def write_csv_gen(resp, out_file):
 
     # Parse using generator function:
     def _csv_gen():
+        p = re.compile(r"\{\"id")
         for line in resp.iter_lines(decode_unicode=True):
-            if re.match("\{\"id", line):
+            if p.match(line):
                 obj = json.loads(line.rstrip("\r\n,"))
                 row = [obj["key"]]
                 vals = obj["value"]
@@ -101,9 +102,9 @@ def write_custom1(resp, out_file):
     # Write comma-separated output with format RUN_ID,LANE,BARCODE,READS:
     writer = csv.writer(out_file, delimiter=",")
     writer.writerow(["RUN_ID", "LANE", "BARCODE", "READS"])
-
+    p = re.compile(r"\{\"id")
     for line in resp.iter_lines(decode_unicode=True):
-        if re.match("\{\"id", line):
+        if p.match(line):
             fc = json.loads(line.rstrip("\r\n,"))
             writer.writerows([[fc["key"], i, bc, reads]
                              for i, lane in fc["value"].items()
@@ -140,12 +141,28 @@ def write_custom3(resp, out_file):
             row = [vals[x] for x in header[:-3]] + [k, v["size"], v["nm"]]
             writer.writerow(row)
 
+# CSV formatter for flowcell data:
+def write_custom4(resp, out_file):
+    writer = csv.writer(out_file, delimiter=",")
+    header = ["date", "flowcell", "sequencer", "lane", "barcode", "project", "sample" ,"reads"]
+    writer.writerow(header)
+    p = re.compile(r"\{\"id")
+    for line in resp.iter_lines(decode_unicode=True):
+        if p.match(line):
+            obj = json.loads(line.rstrip("\r\n,"))
+            vals = obj["value"]
+            pre = [vals[x] for x in header[:3]]
+            for lane, barcodes in vals["lanes"].items():
+                for bc, data in barcodes.items():
+                    writer.writerow(pre + [lane, bc] + [data[x] for x in header[-3:]])
+
+
 if __name__ == "__main__":
     # Parse command-line arguments:
     parser = argparse.ArgumentParser(description="Query a CouchDB database")
     parser.add_argument("jsfile", help="File containing JavaScript map function")
     parser.add_argument("--out", help="File to write response to")
-    parser.add_argument("--url", help="Database URL", default="http://tools-dev.scilifelab.se:5984/analysis/_temp_view")
+    parser.add_argument("--url", help="Database URL", default="http://tools-dev.scilifelab.se:5984/x_flowcells/_temp_view")
     parser.add_argument("--csv", help="Convert response to CSV", action="store_true")
     parser.add_argument("-s", "--simplify", help="Omit database id's", action="store_true")
     args = parser.parse_args()
@@ -158,7 +175,7 @@ if __name__ == "__main__":
         else:
             write_func = write_json
 
-    write_func = write_custom3
+    write_func = write_custom4
     resp = get_data(args.url, args.jsfile)
 
     if args.out:
