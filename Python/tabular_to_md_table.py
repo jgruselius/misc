@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 # Python script for coverting tab-separated data to Markdown tables
 
 import sys
