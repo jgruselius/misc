@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 # 2018-01-25 Joel Gruselius
 
 # Safely delete files and folders by listing them first
@@ -29,7 +29,8 @@ for file in "${args[@]}"; do
     printf '\t%s\n' "$file"
     files+=("$file")
   elif [[ -d $file ]]; then
-    if [[ ! $file =~ ^\.\.?$ ]]; then
+    f=$(basename "$file")
+    if [[ ! $f =~ ^\.\.?$ ]]; then
       printf '\t%b%s/%b\n' $col_blu "$file" $col_off
       folders+=("$file")
     fi
