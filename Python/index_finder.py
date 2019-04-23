@@ -1,4 +1,4 @@
-# #!/usr/bin/env python
+#!/usr/bin/env python
 
 # Author: Joel Gruselius, Dec 2018 
 # Script for checking index clashes
@@ -17,7 +17,7 @@ import json
 import os
 import errno
 
-COMPL_MAP = {"A":"T","T":"A","C":"G","G":"C"}
+COMPL_MAP = {"A": "T", "T": "A", "C": "G", "G": "C"}
 
 def file_hash(path):
     BUF_SIZE = 65536

@@ -1,4 +1,4 @@
-# #!/usr/bin/env python
+#!/usr/bin/env python
 
 # Author: Joel Gruselius, Dec 2018 
 # Script for checking index clashes
