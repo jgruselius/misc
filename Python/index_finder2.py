@@ -3,7 +3,7 @@
 # Author: Joel Gruselius, Dec 2018 
 # Script for checking index clashes
 # Input one or several nucleotide sequences and print any matches found in
-# the an index reference file using grep.
+# the an index reference file using grep (GNU grep to enable Perl regexes).
 # Usage:
 #   index_finder --ref <reference_list> <index_seq>...
 
@@ -13,9 +13,9 @@ import errno
 import subprocess
 
 def main(args):
-    if not os.path.isfile(args.ref):
+    #if not os.path.isfile(args.ref):
         # File not found
-        raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), args.ref)
+       # raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), args.ref)
 
     # Build pattern from args:
     pattern = "|".join(args.seqs)
@@ -23,8 +23,15 @@ def main(args):
     # Construct grep command:
     command = ["ggrep", "-C", "0", "--no-group-separator", "--color=always", "-P", "-e", pattern, args.ref]
     # grep gives a non-zero exit code on no match
-    out = subprocess.check_output(command)
-    print(out.decode("ascii"))
+    try:
+        out = subprocess.check_output(command)
+    except subprocess.CalledProcessError as err:
+        if err.returncode == 1:
+            print("No matches found.")
+        else:
+            print(err)
+    else:
+        print(out.decode("ascii"))
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Find index clashes")
