@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This script finds all files with identical file names in a folder
 # structure and compares them by hash

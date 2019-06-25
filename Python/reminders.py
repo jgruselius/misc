@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Author:      Joel Gruselius 2018-10
 # Description: Create a reminder entry in Reminder.app

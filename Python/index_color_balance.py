@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Author: Joel Gruselius 2019
 # Color balance checker for index sequences in Illumina sequencing
@@ -252,7 +252,7 @@ class ColorBalanceChecker:
         self.validate(seqs).count_base_by_pos().check_balance_general()
         # self.validate(seqs).conv_to_col_chan().sum_chan()
 
-    # Verify that all strings only consist of AGTC, sotre unique lenghts and
+    # Verify that all strings only consist of AGTC, store unique lenghts and
     # strip leading/trailing whitespace:
     def validate(self, seqs):
         valid = []
