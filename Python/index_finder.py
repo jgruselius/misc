@@ -3,7 +3,9 @@
 # Author: Joel Gruselius, Dec 2018 
 # Script for checking index clashes
 # Input one or several nucleotide sequences and print any matches found in
-# the an index reference file.
+# the index reference file. This version is only good for checking for
+# full matches.
+# It is pretty useful though to list overlapping indexes in the reference file.
 # Usage:
 #   index_finder --ref <reference_list> <index_seq>...
 
@@ -41,12 +43,15 @@ def rev_compl(seq):
     return "".join(rc)
 
 # Build a dict of know index sequences from a text file:
-def build_index_dict(path):
+def build_index_dict(path, length):
     ref_dict = {}
-    seq_pattern = re.compile(r"(?<![ATCG])[ATCGN]{6}")
+    if length is None:
+        seq_pattern = re.compile(r"(?<![ATCG])[ATCGN]{4,}")
+    else:    
+        seq_pattern = re.compile(r"(?<![ATCG])[ATCGN]{{{}}}".format(length))
     with open(path, "r") as ref:
         for line in ref:
-            match = seq_pattern.findall(line)
+            match = set(seq_pattern.findall(line))
             if match:
                 for m in match:
                     ref_dict.setdefault(m, []).append(line.strip())
@@ -61,32 +66,53 @@ def save_index_dict(obj, path):
     with open(path, "w") as f:
         json.dump(obj, f)
 
+def print_index_dict(ref_dict):
+    for seq, matches in ref_dict.items():
+        if len(matches) > 1:
+            print(seq)
+            for match in matches:
+                print("\t{}".format(match))
+
 def main(args):
     if not os.path.isfile(args.ref):
         # File not found
         raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), args.ref)
     md5 = file_hash(args.ref)
-    cache = "{}.json".format(md5)
-    if os.path.isfile(cache):
+    cache = "{}{}.json".format(md5, args.length or "")
+    if not args.rebuild and os.path.isfile(cache):
         print("Loading cached index dict ({})".format(cache))
         ref_dict = load_index_dict(cache)
     else:
-        ref_dict = build_index_dict(args.ref)
+        ref_dict = build_index_dict(args.ref, args.length)
         print("Caching index dict ({})".format(cache))
         save_index_dict(ref_dict, cache)
-
-    for arg in args.seqs:
-        seq = arg[:6]
-        if seq in ref_dict:
-            matches = ref_dict[seq]
-            print("{} found in:".format(seq))
-            for m in matches:
-                print("\t{}".format(m))
-        else:
-            print("{}: No matches found".format(seq))
+    if args.list:
+        print_index_dict(ref_dict)
+    else:
+        for arg in args.seqs:
+            if args.length:
+                seq = arg[:args.length]
+            else:
+                seq = arg
+            if seq in ref_dict:
+                matches = ref_dict[seq]
+                print("{} found in:".format(seq))
+                for m in matches:
+                    print("\t{}".format(m))
+            else:
+                print("{}: No matches found".format(seq))
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Find index clashes")
-    p.add_argument("seqs", nargs="+", help="All sequences to search for")
-    p.add_argument("--ref", required=True, help="Reference text file containing known index sequences")
+    g = p.add_mutually_exclusive_group(required=True)
+    g.add_argument("--seqs", nargs="+", help="All sequences to search for")
+    g.add_argument("--list", action="store_true", default=False,
+            help="Print non-unique indexes in the reference list")
+    p.add_argument("--ref", required=True, help="Reference text file containing"
+            " known index sequences")
+    p.add_argument("--rebuild", action="store_true", help="Don't use any cached"
+            " reference object")
+    p.add_argument("--length", type=int, choices=range(4,8), help="Set the "
+            "number of letters to consider, both in the query strings and "
+            "when building the reference")
     main(p.parse_args())
