@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Author: Joel Gruselius, Dec 2018 
 # Script for checking index clashes
@@ -12,6 +12,7 @@
 # TODO: Show sequences matching the first six bases not just complete matches
 # TODO: Specify cache dir
 
+import sys
 import argparse
 import re
 import hashlib
@@ -80,14 +81,19 @@ def main(args):
     md5 = file_hash(args.ref)
     cache = "{}{}.json".format(md5, args.length or "")
     if not args.rebuild and os.path.isfile(cache):
-        print("Loading cached index dict ({})".format(cache))
+        print("Loading cached index dict ({})".format(cache), file=sys.stderr)
         ref_dict = load_index_dict(cache)
     else:
         ref_dict = build_index_dict(args.ref, args.length)
-        print("Caching index dict ({})".format(cache))
+        print("Caching index dict ({})".format(cache), file=sys.stderr)
         save_index_dict(ref_dict, cache)
     if args.list:
         print_index_dict(ref_dict)
+        n = 0
+        for x in ref_dict.values():
+            n += len(x)
+        print("\nTotal barcodes parsed in reference dict: {}".format(n))
+        print("Unique barcodes in reference dict: {}".format(len(ref_dict)))
     else:
         for arg in args.seqs:
             if args.length:

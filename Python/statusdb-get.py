@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import sys
 import json
 import csv
@@ -161,8 +163,8 @@ if __name__ == "__main__":
     # Parse command-line arguments:
     parser = argparse.ArgumentParser(description="Query a CouchDB database")
     parser.add_argument("jsfile", help="File containing JavaScript map function")
-    parser.add_argument("--out", help="File to write response to")
-    parser.add_argument("--url", help="Database URL", default="http://tools-dev.scilifelab.se:5984/x_flowcells/_temp_view")
+    parser.add_argument("--out", help="File to write response to (default: stdout")
+    parser.add_argument("--url", help="Database URL", default="http://tools-dev.scilifelab.se:5984/projects/_temp_view")
     parser.add_argument("--csv", help="Convert response to CSV", action="store_true")
     parser.add_argument("-s", "--simplify", help="Omit database id's", action="store_true")
     args = parser.parse_args()
@@ -175,7 +177,7 @@ if __name__ == "__main__":
         else:
             write_func = write_json
 
-    write_func = write_custom4
+    write_func = write_custom2
     resp = get_data(args.url, args.jsfile)
 
     if args.out:

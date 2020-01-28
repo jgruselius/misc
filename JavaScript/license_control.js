@@ -1,4 +1,4 @@
-/*
+/* 
  Joel Gruselius | 2015-09
 
  (Google Apps script)
@@ -6,7 +6,7 @@
  Script for listing sheet names where a string is found.
  Used to list all sheets (of a defined format) where a user ID
  is present along with a valid date.
-
+ 
  The refresh function must be used to work around Google's
  caching of return values of custom functions.
 */
@@ -102,8 +102,8 @@ function refreshLastUpdate() {
 function copyAndTranspose() {
   var s = SpreadsheetApp.getActiveSpreadsheet();
   var a = s.getSheetByName("All Licenses").getDataRange().getValues();
-  var t = a[0].map(function(col, i) {
-    return a.map(function(row) {
+  var t = a[0].map(function(col, i) { 
+    return a.map(function(row) { 
       return row[i];
     });
   });
@@ -115,7 +115,7 @@ function copyAndTranspose() {
  * method sheets
  */
 function updateMethodList() {
-  var sheet = SpreadsheetApp.getActive().getSheetByName("All Licenses");
+  var sheet = SpreadsheetApp.getActive().getSheetByName("All Licenses");  
   var sheetList = SpreadsheetApp.getActive().getSheets();
   var nameList = [];
   for(var i in sheetList) {
@@ -149,12 +149,12 @@ function updateMethodList() {
 
 /**
  * Return a comma-separated string of all the sheet names where
- * the specified userName string was found together with a valid
+ * the specified userName string was found together with a valid 
  * issue date. Search only sheets with string "Username" in cell A1.
  *
  * @param {string} userName The string to search for.
  * @param {object} dummyVar To work around return value caching.
- * @param {string} sep Separator between hits in result string.
+ * @param {string} sep Separator between hits in result string. 
  * @customfunction
  */
 function getLicenses(userName, dummyVar, sep) {
@@ -166,10 +166,10 @@ function getLicenses(userName, dummyVar, sep) {
   var ISSUE_COL = 4;
   var REVOKE_COL = 5;
   var maxCol = Math.max(USER_COL,SIGN_COL,ISSUE_COL,REVOKE_COL) + 1;
-
+  
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   var licenseList = [];
-
+  
   for(var i in sheets) {
     var sheet = sheets[i];
     var data  = sheet.getSheetValues(1, 1, 1, 1);
@@ -185,7 +185,7 @@ function getLicenses(userName, dummyVar, sep) {
           if(!sign) {
             error = "MISSING SIGNATURE";
           } else if(!issueDate || !isFinite(issueDate)) {
-            error = "DATE ERROR";
+            error = "DATE ERROR"; 
           } else if(!!revokeDate) {
             revokeDate = new Date(revokeDate);
             if(!isFinite(revokeDate)) {
@@ -288,7 +288,7 @@ function protectSheet(sheet) {
     p.removeEditors(p.getEditors());
     p.addEditors(EDITORS);
     return p;
-  });
+  }); 
   var range = sheet.getRange(1, 1, 1, sheet.getMaxColumns());
   reset(range).setDescription("Protected header");
   range = sheet.getRange(2, 4, sheet.getMaxRows(), 2);
@@ -296,7 +296,7 @@ function protectSheet(sheet) {
   Logger.log("Added editors " + EDITORS.join(", ") + " to " + sheet.getName());
 }
 
-function resetProtections() {
+function resetProtections() {   
   var ss = SpreadsheetApp.getActive();
   var sheets = ss.getSheets();
   for(var i in sheets) {
@@ -313,7 +313,7 @@ function resetProtections() {
   }
 }
 
-/**
+/** 
  * Use this to update the WIP spreadsheet with data from the
  * current, in use spreadsheet (paste the correct ID on the 1st line):
  */
@@ -366,7 +366,8 @@ function getIncomplete() {
   for(var c in COLS) {
     if(COLS[c] >= maxCol) maxCol = COLS[c]+1;
   }
-
+  // var idPattern = /^[a-z\-]+\.[a-z\-]+(\.[a-z\-])?$/;
+  var idPattern = /^([A-Za-z][a-z]+[\.\-]?){1,5}$/;
   var sheets = SpreadsheetApp.getActive().getSheets();
   var licenseList = [];
   var errors = [];
@@ -380,6 +381,7 @@ function getIncomplete() {
         var row = data[j];
         var userId = row[COLS.USER];
         if(userId) {
+          if(!idPattern.test(userId)) errors.push(sheetName + ": Unexpected format of user ID \"" + userId + "\"");
           if(!row[COLS.TR_SIGN]) errors.push(sheetName + ": Trainer signature missing for " + userId);
           if(!row[COLS.RE_SIGN]) errors.push(sheetName + ": Responsible signature missing for " + userId);
           if(!row[COLS.QA_SIGN]) errors.push(sheetName + ": QA manager signature missing for " + userId);
@@ -408,7 +410,7 @@ function trimSheet(sheet) {
   }
 }
 
-function trimSheets() {
+function trimSheets() {   
   var ss = SpreadsheetApp.getActive();
   var sheets = ss.getSheets();
   for(var i in sheets) {

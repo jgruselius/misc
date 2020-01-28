@@ -35,7 +35,7 @@ function(doc) {
 		data.facility = x['type'];
 		var prep = x['library_construction_method'];
 		if(prep && prep.indexOf(',') >= 0) {
-			prep = 	prep.replace(/,/g,"");
+			prep = prep.replace(/,/g,"");
 			prep = prep.replace(/\s\-/g,"");
 			prep = prep.replace(/[\[\(][\d\-\s]+[\]\)]/g,"");
 			prep = prep.trim();
